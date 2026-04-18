@@ -613,7 +613,12 @@ func (m *Modifier) Handle(w http.ResponseWriter, r *http.Request) {
 		admissionResponse = m.MutatePod(&ar)
 	}
 
-	admissionReview := admissionv1.AdmissionReview{}
+	admissionReview := admissionv1.AdmissionReview{
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "admission.k8s.io/v1",
+			Kind:       "AdmissionReview",
+		},
+	}
 	if admissionResponse != nil {
 		admissionReview.Response = admissionResponse
 		if ar.Request != nil {
