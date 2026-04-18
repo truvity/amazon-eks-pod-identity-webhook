@@ -3,10 +3,11 @@ package debug
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
-	"k8s.io/api/admission/v1beta1"
-	"k8s.io/klog/v2"
 	"net/http"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
+	admissionv1 "k8s.io/api/admission/v1"
+	"k8s.io/klog/v2"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -32,8 +33,8 @@ func (c *Dumper) InternalServerError(w http.ResponseWriter, r *http.Request) {
 }
 
 func (c *Dumper) Deny(w http.ResponseWriter, r *http.Request) {
-	admissionReview := &v1beta1.AdmissionReview{
-		Response: &v1beta1.AdmissionResponse{
+	admissionReview := &admissionv1.AdmissionReview{
+		Response: &admissionv1.AdmissionResponse{
 			Allowed: false,
 			Result: &metav1.Status{
 				Message: "Test deny message",

@@ -18,24 +18,25 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
-	mocks "github.com/aws/amazon-eks-pod-identity-webhook/pkg/mocks/math/rand"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/types"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
+	mocks "github.com/aws/amazon-eks-pod-identity-webhook/pkg/mocks/math/rand"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"k8s.io/apimachinery/pkg/types"
+
 	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
-	"k8s.io/api/admission/v1beta1"
+	admissionv1 "k8s.io/api/admission/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
-	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 )
@@ -59,18 +60,18 @@ func TestMutatePod(t *testing.T) {
 
 	cases := []struct {
 		caseName string
-		input    *v1beta1.AdmissionReview
-		response *v1beta1.AdmissionResponse
+		input    *admissionv1.AdmissionReview
+		response *admissionv1.AdmissionResponse
 	}{
 		{
 			"nilBody",
 			nil,
-			&v1beta1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
+			&admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 		},
 		{
 			"NoRequest",
-			&v1beta1.AdmissionReview{Request: nil},
-			&v1beta1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
+			&admissionv1.AdmissionReview{Request: nil},
+			&admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 		},
 		{
 			"ValidRequest",
@@ -120,7 +121,7 @@ func TestMutatePod_MutationNotNeeded(t *testing.T) {
 	assert.Nil(t, response.Patch)
 }
 
-var jsonPatchType = v1beta1.PatchType("JSONPatch")
+var jsonPatchType = admissionv1.PatchType("JSONPatch")
 
 var rawPodWithoutVolume = []byte(`
 {
@@ -144,8 +145,8 @@ var rawPodWithoutVolume = []byte(`
 
 var validPatchIfNoVolumesPresent = []byte(`[{"op":"add","path":"/spec/volumes","value":[{"name":"aws-iam-token","projected":{"sources":[{"serviceAccountToken":{"audience":"sts.amazonaws.com","expirationSeconds":3600,"path":"token"}}]}}]},{"op":"add","path":"/spec/containers","value":[{"name":"balajilovesoreos","image":"amazonlinux","env":[{"name":"AWS_ROLE_ARN","value":"arn:aws:iam::111122223333:role/s3-reader"},{"name":"AWS_WEB_IDENTITY_TOKEN_FILE","value":"/var/run/secrets/eks.amazonaws.com/serviceaccount/token"}],"resources":{},"volumeMounts":[{"name":"aws-iam-token","readOnly":true,"mountPath":"/var/run/secrets/eks.amazonaws.com/serviceaccount"}]}]}]`)
 
-func getValidHandlerResponse(uuid string) *v1beta1.AdmissionResponse {
-	return &v1beta1.AdmissionResponse{
+func getValidHandlerResponse(uuid string) *admissionv1.AdmissionResponse {
+	return &admissionv1.AdmissionResponse{
 		UID:       types.UID(uuid),
 		Allowed:   true,
 		Patch:     validPatchIfNoVolumesPresent,
@@ -153,9 +154,9 @@ func getValidHandlerResponse(uuid string) *v1beta1.AdmissionResponse {
 	}
 }
 
-func getValidReview(pod []byte) *v1beta1.AdmissionReview {
-	return &v1beta1.AdmissionReview{
-		Request: &v1beta1.AdmissionRequest{
+func getValidReview(pod []byte) *admissionv1.AdmissionReview {
+	return &admissionv1.AdmissionReview{
+		Request: &admissionv1.AdmissionRequest{
 			UID: uuid,
 			Kind: metav1.GroupVersionKind{
 				Version: "v1",
@@ -177,7 +178,7 @@ func getValidReview(pod []byte) *v1beta1.AdmissionReview {
 	}
 }
 
-func serializeAdmissionReview(t *testing.T, want *v1beta1.AdmissionReview) []byte {
+func serializeAdmissionReview(t *testing.T, want *admissionv1.AdmissionReview) []byte {
 	wantedBytes, err := json.Marshal(want)
 	if err != nil {
 		t.Errorf("Failed to marshal desired response: %v", err)
@@ -227,21 +228,21 @@ func TestModifierHandler(t *testing.T) {
 			"nilBody",
 			nil,
 			"application/json",
-			serializeAdmissionReview(t, &v1beta1.AdmissionReview{
-				Response: &v1beta1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{
+				Response: &admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 			}),
 		},
 		{
 			"NoRequest",
-			serializeAdmissionReview(t, &v1beta1.AdmissionReview{Request: nil}),
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{Request: nil}),
 			"application/json",
-			serializeAdmissionReview(t, &v1beta1.AdmissionReview{
-				Response: &v1beta1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{
+				Response: &admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 			}),
 		},
 		{
 			"BadContentType",
-			serializeAdmissionReview(t, &v1beta1.AdmissionReview{Request: nil}),
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{Request: nil}),
 			"application/xml",
 			[]byte("Invalid Content-Type, expected `application/json`\n"),
 		},
@@ -261,7 +262,7 @@ func TestModifierHandler(t *testing.T) {
 			"ValidRequestSuccessWithoutVolumes",
 			serializeAdmissionReview(t, getValidReview(rawPodWithoutVolume)),
 			"application/json",
-			serializeAdmissionReview(t, &v1beta1.AdmissionReview{Response: getValidHandlerResponse(uuid)}),
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{Response: getValidHandlerResponse(uuid)}),
 		},
 	}
 
