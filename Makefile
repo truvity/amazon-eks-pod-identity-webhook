@@ -15,6 +15,26 @@ GIT_COMMIT ?= $(shell git log -1 --pretty=%h)
 # Architectures for binary builds
 BIN_ARCH_LINUX ?= amd64 arm64
 
+# ── Truvity GHCR build (ko) ──────────────────────────────────────────
+GHCR_REPO ?= ghcr.io/truvity/amazon-eks-pod-identity-webhook
+TAG ?= $(GIT_COMMIT)
+PLATFORMS ?= linux/amd64,linux/arm64
+
+.PHONY: ko-login ko-build ko-push vuln
+
+ko-login:
+	@echo "$(shell gh auth token)" | ko login ghcr.io --username=$(shell gh api user --jq .login) --password-stdin
+
+ko-build:
+	KO_DOCKER_REPO=$(GHCR_REPO) ko build --platform=$(PLATFORMS) --bare --tags=$(TAG) --push=false .
+
+ko-push: ko-login
+	KO_DOCKER_REPO=$(GHCR_REPO) ko build --platform=$(PLATFORMS) --bare --tags=$(TAG) .
+
+vuln:
+	govulncheck ./...
+# ─────────────────────────────────────────────────────────────────────
+
 test:
 	hack/test.sh
 
