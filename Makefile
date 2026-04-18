@@ -35,6 +35,14 @@ ghcr-push: ghcr-login
 
 vuln:
 	govulncheck ./...
+
+.PHONY: chart-package chart-push
+
+chart-package:
+	helm package chart/
+
+chart-push: ghcr-login chart-package
+	helm push $$(ls amazon-eks-pod-identity-webhook-*.tgz) oci://ghcr.io/truvity
 # ─────────────────────────────────────────────────────────────────────
 
 test:

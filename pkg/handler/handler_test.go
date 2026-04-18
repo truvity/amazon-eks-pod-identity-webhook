@@ -123,6 +123,12 @@ func TestMutatePod_MutationNotNeeded(t *testing.T) {
 
 var jsonPatchType = admissionv1.PatchType("JSONPatch")
 
+// responseTypeMeta is the TypeMeta that Handle() adds to all AdmissionReview responses.
+var responseTypeMeta = metav1.TypeMeta{
+	APIVersion: "admission.k8s.io/v1",
+	Kind:       "AdmissionReview",
+}
+
 var rawPodWithoutVolume = []byte(`
 {
   "apiVersion": "v1",
@@ -229,6 +235,7 @@ func TestModifierHandler(t *testing.T) {
 			nil,
 			"application/json",
 			serializeAdmissionReview(t, &admissionv1.AdmissionReview{
+				TypeMeta: responseTypeMeta,
 				Response: &admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 			}),
 		},
@@ -237,6 +244,7 @@ func TestModifierHandler(t *testing.T) {
 			serializeAdmissionReview(t, &admissionv1.AdmissionReview{Request: nil}),
 			"application/json",
 			serializeAdmissionReview(t, &admissionv1.AdmissionReview{
+				TypeMeta: responseTypeMeta,
 				Response: &admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 			}),
 		},
@@ -250,19 +258,19 @@ func TestModifierHandler(t *testing.T) {
 			"InvalidJSON",
 			[]byte(`{"request": {"object": "\"metadata\":{\"name\":\"fake\""}`),
 			"application/json",
-			[]byte(`{"response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"couldn't get version/kind; json parse error: unexpected end of JSON input"}}}`),
+			[]byte(`{"kind":"AdmissionReview","apiVersion":"admission.k8s.io/v1","response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"couldn't get version/kind; json parse error: unexpected end of JSON input"}}}`),
 		},
 		{
 			"InvalidPodBytes",
 			[]byte(`{"request": {"object": "\"metadata\":{\"name\":\"fake\""}}`),
 			"application/json",
-			[]byte(`{"response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"json: cannot unmarshal string into Go value of type v1.Pod"}}}`),
+			[]byte(`{"kind":"AdmissionReview","apiVersion":"admission.k8s.io/v1","response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"json: cannot unmarshal string into Go value of type v1.Pod"}}}`),
 		},
 		{
 			"ValidRequestSuccessWithoutVolumes",
 			serializeAdmissionReview(t, getValidReview(rawPodWithoutVolume)),
 			"application/json",
-			serializeAdmissionReview(t, &admissionv1.AdmissionReview{Response: getValidHandlerResponse(uuid)}),
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{TypeMeta: responseTypeMeta, Response: getValidHandlerResponse(uuid)}),
 		},
 	}
 
