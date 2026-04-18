@@ -15,21 +15,23 @@ GIT_COMMIT ?= $(shell git log -1 --pretty=%h)
 # Architectures for binary builds
 BIN_ARCH_LINUX ?= amd64 arm64
 
-# ── Truvity GHCR build (ko) ──────────────────────────────────────────
+# ── Truvity GHCR build (Dockerfile) ───────────────────────────────────
+# The chart expects the binary at /webhook (Dockerfile build), not
+# /ko-app/... (ko build). Use Dockerfile for image builds.
 GHCR_REPO ?= ghcr.io/truvity/amazon-eks-pod-identity-webhook
 TAG ?= $(GIT_COMMIT)
 PLATFORMS ?= linux/amd64,linux/arm64
 
-.PHONY: ko-login ko-build ko-push vuln
+.PHONY: ghcr-login ghcr-build ghcr-push vuln
 
-ko-login:
-	@echo "$(shell gh auth token)" | ko login ghcr.io --username=$(shell gh api user --jq .login) --password-stdin
+ghcr-login:
+	@echo "$(shell gh auth token)" | docker login ghcr.io --username=$(shell gh api user --jq .login) --password-stdin
 
-ko-build:
-	KO_DOCKER_REPO=$(GHCR_REPO) ko build --platform=$(PLATFORMS) --bare --tags=$(TAG) --push=false .
+ghcr-build:
+	docker buildx build --platform=$(PLATFORMS) --tag $(GHCR_REPO):$(TAG) .
 
-ko-push: ko-login
-	KO_DOCKER_REPO=$(GHCR_REPO) ko build --platform=$(PLATFORMS) --bare --tags=$(TAG) .
+ghcr-push: ghcr-login
+	docker buildx build --platform=$(PLATFORMS) --tag $(GHCR_REPO):$(TAG) --push .
 
 vuln:
 	govulncheck ./...
