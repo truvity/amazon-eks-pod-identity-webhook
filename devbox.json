@@ -2,7 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.17.1/.schema/devbox.schema.json",
   "packages": [
     "ko@latest",
-    "govulncheck@latest"
+    "govulncheck@latest",
+    "go@1.26"
   ],
   "shell": {
     "init_hook": [
