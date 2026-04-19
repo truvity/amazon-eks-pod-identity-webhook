@@ -42,7 +42,7 @@ chart-package:
 	helm package chart/
 
 chart-push: ghcr-login chart-package
-	helm push $$(ls amazon-eks-pod-identity-webhook-*.tgz) oci://ghcr.io/truvity
+	helm push $$(ls amazon-eks-pod-identity-webhook-*.tgz) oci://ghcr.io/truvity/charts
 # ─────────────────────────────────────────────────────────────────────
 
 test:

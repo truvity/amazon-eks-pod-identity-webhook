@@ -34,7 +34,7 @@ This fork fixes both the webhook binary and the Helm chart.
 | Artifact | Location |
 |----------|----------|
 | Container image | `ghcr.io/truvity/amazon-eks-pod-identity-webhook:<tag>` |
-| Helm chart (OCI) | `oci://ghcr.io/truvity/amazon-eks-pod-identity-webhook` |
+| Helm chart (OCI) | `oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook` |
 
 ## Installation on Self-Hosted AWS Kubernetes 1.35+
 
@@ -50,7 +50,7 @@ This fork fixes both the webhook binary and the Helm chart.
 ```bash
 # Add the chart from GHCR OCI registry
 helm install pod-identity-webhook \
-  oci://ghcr.io/truvity/amazon-eks-pod-identity-webhook \
+  oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook \
   --namespace kube-system \
   --set config.defaultAwsRegion=eu-central-1 \
   --set config.tokenAudience=sts.amazonaws.com \
@@ -84,7 +84,7 @@ replicaCount: 2
 
 ```bash
 helm install pod-identity-webhook \
-  oci://ghcr.io/truvity/amazon-eks-pod-identity-webhook \
+  oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook \
   --namespace kube-system \
   -f pod-identity-webhook-values.yaml
 ```
@@ -109,7 +109,7 @@ kubectl -n <namespace> get pods -o jsonpath='{range .items[*]}{.metadata.name}{"
 
 ## Version Convention
 
-Tags follow `v{upstream_version}-truvity.{patch}` (e.g., `v0.5.7-truvity.5`). The upstream version tracks the base commit from `aws/amazon-eks-pod-identity-webhook`. The truvity patch number increments with each release from this fork.
+Tags follow `v{upstream_version}-truvity.{patch}` (e.g., `v0.5.7-truvity.5`). Both the container image and Helm chart are released from the same tag. The chart version is derived from the tag (without `v` prefix), and `appVersion` matches the tag exactly. No image override is needed in values — the chart defaults to the correct image for its version.
 
 ## Development
 

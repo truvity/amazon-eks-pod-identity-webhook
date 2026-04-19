@@ -79,6 +79,17 @@ jobs:
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
 
+      - name: Extract tag
+        id: tag
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Set chart version from tag
+        run: |
+          sed -i "s/^version:.*/version: ${{ steps.tag.outputs.version }}/" chart/Chart.yaml
+          sed -i "s/^appVersion:.*/appVersion: ${GITHUB_REF#refs/tags/}/" chart/Chart.yaml
+
       - name: Login to GHCR
         run: echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io --username ${{ github.actor }} --password-stdin
 
@@ -86,4 +97,4 @@ jobs:
         run: helm package chart/
 
       - name: Push chart to GHCR
-        run: helm push $(ls amazon-eks-pod-identity-webhook-*.tgz) oci://ghcr.io/truvity
+        run: helm push $(ls amazon-eks-pod-identity-webhook-*.tgz) oci://ghcr.io/truvity/charts
