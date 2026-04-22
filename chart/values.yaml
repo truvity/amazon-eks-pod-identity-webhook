@@ -185,7 +185,7 @@ securityContext:
   # -- Container securityContext: Run primary group ID
   runAsGroup: 1
   # -- Container securityContext: Disable root user
-  runAsNonRoot: false
+  runAsNonRoot: true
   # -- Container securityContext: Run user ID
   runAsUser: 65534
   # -- Container securityContext: Drop capabilities
