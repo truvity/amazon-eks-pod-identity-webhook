@@ -15,6 +15,36 @@ GIT_COMMIT ?= $(shell git log -1 --pretty=%h)
 # Architectures for binary builds
 BIN_ARCH_LINUX ?= amd64 arm64
 
+# ── Truvity GHCR build (Dockerfile) ───────────────────────────────────
+# The chart expects the binary at /webhook (Dockerfile build), not
+# /ko-app/... (ko build). Use Dockerfile for image builds.
+GHCR_REPO ?= ghcr.io/truvity/amazon-eks-pod-identity-webhook
+TAG ?= $(GIT_COMMIT)
+PLATFORMS ?= linux/amd64,linux/arm64
+
+.PHONY: ghcr-login ghcr-build ghcr-push vuln
+
+ghcr-login:
+	@echo "$(shell gh auth token)" | docker login ghcr.io --username=$(shell gh api user --jq .login) --password-stdin
+
+ghcr-build:
+	docker buildx build --platform=$(PLATFORMS) --tag $(GHCR_REPO):$(TAG) .
+
+ghcr-push: ghcr-login
+	docker buildx build --platform=$(PLATFORMS) --tag $(GHCR_REPO):$(TAG) --push .
+
+vuln:
+	govulncheck ./...
+
+.PHONY: chart-package chart-push
+
+chart-package:
+	helm package chart/
+
+chart-push: ghcr-login chart-package
+	helm push $$(ls amazon-eks-pod-identity-webhook-*.tgz) oci://ghcr.io/truvity/charts
+# ─────────────────────────────────────────────────────────────────────
+
 test:
 	hack/test.sh
 
