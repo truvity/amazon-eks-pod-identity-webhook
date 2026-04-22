@@ -1,5 +1,5 @@
 apiVersion: v2
-appVersion: v0.5.7-truvity.8
+appVersion: v0.5.7-truvity.9
 description: A Kubernetes webhook for pods that need AWS IAM access (Truvity fork with admission/v1 support)
 home: https://github.com/truvity/amazon-eks-pod-identity-webhook
 keywords:
@@ -19,4 +19,4 @@ sources:
 - https://github.com/aws/amazon-eks-pod-identity-webhook/
 - https://github.com/jkroepke/helm-charts/tree/main/charts/amazon-eks-pod-identity-webhook
 type: application
-version: 0.5.7-truvity.8
+version: 0.5.7-truvity.9
