@@ -17,7 +17,7 @@ This fork fixes the webhook binary to use `admission/v1`.
 
 ## Changes From Upstream
 
-**Based on:** upstream `master` (post-v0.6.16, includes k8s 1.36 deps, SA cache strip, pod-identity label)
+**Based on:** upstream `master` (post-v0.6.17, Go 1.26.4, includes k8s 1.36 deps, SA cache strip, pod-identity label)
 
 **Webhook binary (`pkg/handler/handler.go`, `pkg/cache/debug/debug.go`):**
 - Import `k8s.io/api/admission/v1` instead of `v1beta1`
@@ -30,16 +30,22 @@ This fork fixes the webhook binary to use `admission/v1`.
 - `go-jose/v4` bumped to v4.1.4 (CVE fix)
 - `golang.org/x/crypto` removed (no longer needed)
 
+**Build:**
+- Dockerfile removed — container image built with GoReleaser + ko (`distroless/static:nonroot`)
+- Multi-arch (amd64/arm64) image pushed to GHCR
+
 **CI/CD:**
-- GitHub Actions: build, test, govulncheck, Trivy scanning
-- Release on tag: multi-arch image (amd64/arm64) to GHCR
-- Dependabot with auto-merge for patch/minor updates
+- GitHub Actions via devbox + Justfile (`just check` = build + test + lint + vuln)
+- Release on tag: GoReleaser (ko image + binary archives) + Helm chart push to GHCR OCI
+- Self-hosted Renovate with automerge for non-major updates
+- Security workflow: govulncheck + Trivy (weekly + push/PR)
 - All actions pinned to commit SHAs
 
 **Removed from upstream:**
+- `Dockerfile` (replaced by GoReleaser + ko)
+- `Makefile` (replaced by Justfile)
 - AWS-specific build/test workflows (replaced with GHCR-based CI)
-- Helm chart (deployed via separate mechanism)
-- Makefile (use `go build` directly)
+- Dependabot (replaced by Renovate)
 
 ## Artifacts
 
@@ -71,8 +77,9 @@ just helm-lint        # lint Helm chart
 
 ```bash
 git fetch upstream
-git log --oneline v0.6.16..upstream/master  # check new commits
-# Rebase or cherry-pick, re-apply v1beta1→v1 patch, run tests
+git log --oneline upstream/master ^origin/master  # check new commits
+git merge upstream/master                          # merge (our patches are additive, not rebased)
+just check                                         # verify build + test + lint
 ```
 
 ## License

@@ -2,6 +2,13 @@
 
 All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are documented here.
 
+## [0.6.16-truvity.4] — 2026-06-21
+
+### Fixed
+- devbox.json: use `kubernetes-helm` package name (not `helm` — segfaulted in CI)
+- devbox.json: add `GOEXPERIMENT=jsonv2` env var
+- devbox.json: add `gopls`, `just-lsp` packages (matches org repos)
+
 ## [0.6.16-truvity.3] — 2026-06-21
 
 ### Changed
