@@ -1,0 +1,29 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  # Minimal linter set for this fork. Upstream code was never lint-cleaned,
+  # and we want to minimize Go source changes to ease future upstream merges.
+  # New Truvity-authored Go files (if any) should pass the full set manually.
+  default: none
+  enable:
+    - govet
+    - ineffassign
+    - nolintlint
+
+  settings:
+    govet:
+      disable:
+        - inline  # ioutil.ReadAll inline suggestion — upstream uses deprecated ioutil
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/aws/amazon-eks-pod-identity-webhook

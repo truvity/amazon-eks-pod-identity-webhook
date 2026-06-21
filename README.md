@@ -1,5 +1,10 @@
 # Amazon EKS Pod Identity Webhook (Truvity Fork)
 
+[![CI](https://github.com/truvity/amazon-eks-pod-identity-webhook/actions/workflows/ci.yaml/badge.svg)](https://github.com/truvity/amazon-eks-pod-identity-webhook/actions/workflows/ci.yaml)
+[![Release](https://github.com/truvity/amazon-eks-pod-identity-webhook/actions/workflows/release.yaml/badge.svg)](https://github.com/truvity/amazon-eks-pod-identity-webhook/actions/workflows/release.yaml)
+[![Go Report Card](https://goreportcard.com/badge/github.com/aws/amazon-eks-pod-identity-webhook)](https://goreportcard.com/report/github.com/aws/amazon-eks-pod-identity-webhook)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
 Fork of [aws/amazon-eks-pod-identity-webhook](https://github.com/aws/amazon-eks-pod-identity-webhook) with Kubernetes 1.35+ compatibility.
 
 ## Why This Fork Exists
@@ -41,6 +46,9 @@ This fork fixes the webhook binary to use `admission/v1`.
 | Artifact | Location |
 |----------|----------|
 | Container image | `ghcr.io/truvity/amazon-eks-pod-identity-webhook:<tag>` |
+| Helm chart | `oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook:<version>` |
+| Binary (linux/amd64) | GitHub Release tarball |
+| Binary (linux/arm64) | GitHub Release tarball |
 
 ## Version Convention
 
@@ -49,14 +57,14 @@ Tags follow `v{upstream_version}-truvity.{patch}` (e.g., `v0.6.16-truvity.1`). T
 ## Development
 
 ```bash
-# Build
-go build ./...
-
-# Test
-go test ./...
-
-# Vulnerability scan
-govulncheck ./...
+devbox shell          # activate dev environment
+just build            # build webhook binary
+just test             # run unit tests
+just lint             # run linter (golangci-lint)
+just vuln             # govulncheck
+just check            # build + test + lint + vuln (what CI runs)
+just snapshot         # local GoReleaser snapshot (image + binary)
+just helm-lint        # lint Helm chart
 ```
 
 ## Syncing With Upstream

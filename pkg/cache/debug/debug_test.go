@@ -2,14 +2,16 @@ package debug
 
 import (
 	"encoding/json"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 	"io"
 	"io/ioutil"
-	corev1 "k8s.io/api/core/v1"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"testing"
+
+	corev1 "k8s.io/api/core/v1"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 )
 
 // generateServiceAccount generates n service accounts with arbitrary contents

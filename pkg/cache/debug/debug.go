@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 	admissionv1 "k8s.io/api/admission/v1"
 	"k8s.io/klog/v2"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )

@@ -2,9 +2,10 @@ package cache
 
 import (
 	"encoding/json"
-	v1 "k8s.io/api/core/v1"
 	"strconv"
 	"sync"
+
+	v1 "k8s.io/api/core/v1"
 
 	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
 )

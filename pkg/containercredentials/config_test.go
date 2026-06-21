@@ -18,12 +18,13 @@ package containercredentials
 import (
 	"context"
 	"encoding/json"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (

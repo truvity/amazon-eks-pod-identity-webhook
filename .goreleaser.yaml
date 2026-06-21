@@ -1,0 +1,71 @@
+project_name: amazon-eks-pod-identity-webhook
+
+version: 2
+
+builds:
+  - id: webhook
+    main: .
+    binary: webhook
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X main.Version={{.Version}}
+
+kos:
+  - id: webhook
+    build: webhook
+    tags:
+      - "{{ .Version }}"
+      - "{{ if not .IsSnapshot }}latest{{ end }}"
+    platforms:
+      - linux/amd64
+      - linux/arm64
+    bare: true
+    preserve_import_paths: false
+    base_import_paths: true
+    base_image: gcr.io/distroless/static:nonroot
+    sbom: none
+    labels:
+      org.opencontainers.image.title: amazon-eks-pod-identity-webhook
+      org.opencontainers.image.version: "{{ .Version }}"
+      org.opencontainers.image.source: https://github.com/truvity/amazon-eks-pod-identity-webhook
+
+archives:
+  - id: binary
+    ids:
+      - webhook
+    formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+
+release:
+  github:
+    owner: truvity
+    name: amazon-eks-pod-identity-webhook
+  header: |
+    ## Amazon EKS Pod Identity Webhook {{ .Tag }}
+
+    Docker image: `ghcr.io/truvity/amazon-eks-pod-identity-webhook:{{ .Version }}`
+    Helm chart: `oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook:{{ .Version }}`
+
+changelog:
+  use: github
+  groups:
+    - title: Features
+      regexp: '^feat'
+      order: 0
+    - title: Bug Fixes
+      regexp: '^fix'
+      order: 1
+    - title: Other
+      order: 999
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore:"
+      - "^ci:"

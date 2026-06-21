@@ -29,12 +29,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
-	cachedebug "github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache/debug"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cert"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/handler"
 	"github.com/aws/aws-sdk-go-v2/feature/ec2/imds"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	flag "github.com/spf13/pflag"
@@ -48,6 +42,13 @@ import (
 	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/certwatcher"
 	"sigs.k8s.io/controller-runtime/pkg/manager/signals"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
+	cachedebug "github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache/debug"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cert"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/handler"
 )
 
 var webhookVersion = "v0.1.0"

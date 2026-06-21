@@ -25,7 +25,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 	v1 "k8s.io/api/core/v1"
@@ -38,6 +37,8 @@ import (
 	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/util/retry"
 	"k8s.io/klog/v2"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
 )
 
 type Entry struct {

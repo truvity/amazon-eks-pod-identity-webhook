@@ -18,13 +18,14 @@ package filesystem
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
+	"time"
+
 	"github.com/fsnotify/fsnotify"
 	"k8s.io/apimachinery/pkg/util/wait"
 	"k8s.io/client-go/util/workqueue"
 	"k8s.io/klog/v2"
-	"os"
-	"path/filepath"
-	"time"
 )
 
 const (

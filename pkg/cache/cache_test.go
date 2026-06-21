@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
 	awsarn "github.com/aws/aws-sdk-go-v2/aws/arn"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/assert"
@@ -17,6 +16,8 @@ import (
 	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes/fake"
 	"k8s.io/klog/v2"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
 )
 
 func TestSaCache(t *testing.T) {
