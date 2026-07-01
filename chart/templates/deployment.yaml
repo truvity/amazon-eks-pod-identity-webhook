@@ -43,7 +43,7 @@ spec:
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command:
-            - /webhook
+            - /ko-app/webhook
             - --annotation-prefix={{ tpl .Values.config.annotationPrefix . }}
             - --aws-default-region={{ tpl .Values.config.defaultAwsRegion . }}
             - --in-cluster=false
