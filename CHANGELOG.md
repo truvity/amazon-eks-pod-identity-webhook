@@ -2,6 +2,28 @@
 
 All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are documented here.
 
+## [0.6.17-truvity.1] — 2026-07-04
+
+### Changed
+- Go toolchain updated to 1.26.4 via devbox (security: CVE-2026-42504 mime quadratic complexity)
+- devbox packages updated (govulncheck 1.3.0→1.5.0, just 1.51.0→1.54.0, just-lsp 0.4.5→0.4.7, helm 4.2.0→4.2.2)
+- All Go dependencies updated to latest versions:
+  - github.com/aws/aws-sdk-go-v2 v1.42.0→v1.42.1
+  - github.com/aws/smithy-go v1.27.1→v1.27.3
+  - github.com/go-openapi/swag v0.23.0→v0.27.0 (modularized)
+  - github.com/prometheus/common v0.67.5→v0.69.0
+  - golang.org/x/net v0.55.0→v0.56.0
+  - golang.org/x/oauth2 v0.34.0→v0.36.0
+  - sigs.k8s.io/structured-merge-diff/v6 v6.3.2→v6.4.0
+
+### Upstream
+- Checked upstream aws/amazon-eks-pod-identity-webhook: only new commit is `golang.org/x/net` CVE bump to v0.55.0 (already included in our previous Renovate update, now superseded by v0.56.0)
+
+### Security
+- Go 1.26.4 fixes CVE-2026-42504 (mime: quadratic complexity in WordDecoder.DecodeHeader)
+- golang.org/x/net v0.56.0 addresses CVE-2026-33814, CVE-2026-39821, CVE-2026-25680/25681/27136/42502/42506
+- govulncheck reports no known vulnerabilities in dependency tree
+
 ## [0.6.16-truvity.4] — 2026-06-21
 
 ### Fixed
