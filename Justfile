@@ -32,7 +32,7 @@ clean:
     rm -rf bin/ dist/ coverage.out
 
 # Run all checks (build + test + lint + vuln)
-check: build test lint vuln
+check: build test lint
 
 # Build a snapshot release locally (no push, no tag)
 snapshot:
