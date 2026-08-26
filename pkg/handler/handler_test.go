@@ -35,7 +35,7 @@ import (
 
 	admissionv1 "k8s.io/api/admission/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 
@@ -45,7 +45,7 @@ import (
 const uuid = "918ef1dc-928f-4525-99ef-988389f263c3"
 
 func TestMutatePod(t *testing.T) {
-	testServiceAccount := &v1.ServiceAccount{}
+	testServiceAccount := &corev1.ServiceAccount{}
 	testServiceAccount.Name = "default"
 	testServiceAccount.Namespace = "default"
 	testServiceAccount.Annotations = map[string]string{
