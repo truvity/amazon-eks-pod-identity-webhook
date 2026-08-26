@@ -29,6 +29,8 @@ import (
 
 	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
 
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 	admissionv1 "k8s.io/api/admission/v1"
 	admissionregistrationv1 "k8s.io/api/admissionregistration/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -36,14 +38,10 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/runtime/serializer"
 	"k8s.io/klog/v2"
-
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 )
 
 func init() {
 	_ = corev1.AddToScheme(runtimeScheme)
-	_ = admissionv1.AddToScheme(runtimeScheme)
 	_ = admissionregistrationv1.AddToScheme(runtimeScheme)
 }
 
@@ -614,12 +612,8 @@ func (m *Modifier) Handle(w http.ResponseWriter, r *http.Request) {
 		admissionResponse = m.MutatePod(&ar)
 	}
 
-	admissionReview := admissionv1.AdmissionReview{
-		TypeMeta: metav1.TypeMeta{
-			APIVersion: "admission.k8s.io/v1",
-			Kind:       "AdmissionReview",
-		},
-	}
+	admissionReview := admissionv1.AdmissionReview{}
+	admissionReview.TypeMeta = ar.TypeMeta
 	if admissionResponse != nil {
 		admissionReview.Response = admissionResponse
 		if ar.Request != nil {
