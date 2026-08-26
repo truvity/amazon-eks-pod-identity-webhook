@@ -18,26 +18,28 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
-	mocks "github.com/aws/amazon-eks-pod-identity-webhook/pkg/mocks/math/rand"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"io/ioutil"
-	"k8s.io/apimachinery/pkg/types"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"k8s.io/apimachinery/pkg/types"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
+	mocks "github.com/aws/amazon-eks-pod-identity-webhook/pkg/mocks/math/rand"
+
 	admissionv1 "k8s.io/api/admission/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
-	"k8s.io/api/core/v1"
-	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 )
 
 const uuid = "918ef1dc-928f-4525-99ef-988389f263c3"
