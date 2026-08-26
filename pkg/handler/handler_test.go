@@ -18,29 +18,26 @@ package handler
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
+	mocks "github.com/aws/amazon-eks-pod-identity-webhook/pkg/mocks/math/rand"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"io"
 	"io/ioutil"
+	"k8s.io/apimachinery/pkg/types"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
-	"k8s.io/apimachinery/pkg/types"
-
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
-	mocks "github.com/aws/amazon-eks-pod-identity-webhook/pkg/mocks/math/rand"
-
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 	admissionv1 "k8s.io/api/admission/v1"
 	authenticationv1 "k8s.io/api/authentication/v1"
+	"k8s.io/api/core/v1"
 	corev1 "k8s.io/api/core/v1"
-	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
-
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
 )
 
 const uuid = "918ef1dc-928f-4525-99ef-988389f263c3"
@@ -125,12 +122,6 @@ func TestMutatePod_MutationNotNeeded(t *testing.T) {
 
 var jsonPatchType = admissionv1.PatchType("JSONPatch")
 
-// responseTypeMeta is the TypeMeta that Handle() adds to all AdmissionReview responses.
-var responseTypeMeta = metav1.TypeMeta{
-	APIVersion: "admission.k8s.io/v1",
-	Kind:       "AdmissionReview",
-}
-
 var rawPodWithoutVolume = []byte(`
 {
   "apiVersion": "v1",
@@ -160,6 +151,15 @@ func getValidHandlerResponse(uuid string) *admissionv1.AdmissionResponse {
 		Patch:     validPatchIfNoVolumesPresent,
 		PatchType: &jsonPatchType,
 	}
+}
+
+func getValidReviewWithTypeMeta(pod []byte, apiVersion, kind string) *admissionv1.AdmissionReview {
+	review := getValidReview(pod)
+	review.TypeMeta = metav1.TypeMeta{
+		APIVersion: apiVersion,
+		Kind:       kind,
+	}
+	return review
 }
 
 func getValidReview(pod []byte) *admissionv1.AdmissionReview {
@@ -237,7 +237,6 @@ func TestModifierHandler(t *testing.T) {
 			nil,
 			"application/json",
 			serializeAdmissionReview(t, &admissionv1.AdmissionReview{
-				TypeMeta: responseTypeMeta,
 				Response: &admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 			}),
 		},
@@ -246,7 +245,6 @@ func TestModifierHandler(t *testing.T) {
 			serializeAdmissionReview(t, &admissionv1.AdmissionReview{Request: nil}),
 			"application/json",
 			serializeAdmissionReview(t, &admissionv1.AdmissionReview{
-				TypeMeta: responseTypeMeta,
 				Response: &admissionv1.AdmissionResponse{Result: &metav1.Status{Message: "bad content"}},
 			}),
 		},
@@ -260,19 +258,36 @@ func TestModifierHandler(t *testing.T) {
 			"InvalidJSON",
 			[]byte(`{"request": {"object": "\"metadata\":{\"name\":\"fake\""}`),
 			"application/json",
-			[]byte(`{"kind":"AdmissionReview","apiVersion":"admission.k8s.io/v1","response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"couldn't get version/kind; json parse error: unexpected end of JSON input"}}}`),
+			[]byte(`{"response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"couldn't get version/kind; json parse error: unexpected end of JSON input"}}}`),
 		},
 		{
 			"InvalidPodBytes",
 			[]byte(`{"request": {"object": "\"metadata\":{\"name\":\"fake\""}}`),
 			"application/json",
-			[]byte(`{"kind":"AdmissionReview","apiVersion":"admission.k8s.io/v1","response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"json: cannot unmarshal string into Go value of type v1.Pod"}}}`),
+			[]byte(`{"response":{"uid":"","allowed":false,"status":{"metadata":{},"message":"json: cannot unmarshal string into Go value of type v1.Pod"}}}`),
 		},
 		{
 			"ValidRequestSuccessWithoutVolumes",
 			serializeAdmissionReview(t, getValidReview(rawPodWithoutVolume)),
 			"application/json",
-			serializeAdmissionReview(t, &admissionv1.AdmissionReview{TypeMeta: responseTypeMeta, Response: getValidHandlerResponse(uuid)}),
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{Response: getValidHandlerResponse(uuid)}),
+		},
+		{
+			// Regression test: when a v1 AdmissionReview is sent (k3s, kOps,
+			// vanilla k8s >= 1.16), the response must echo back the same
+			// apiVersion and kind so the API server can decode it.
+			// Previously the handler returned an empty TypeMeta, causing
+			// "got /, Kind=" errors on non-EKS clusters.
+			"ValidRequestV1TypeMetaEchoed",
+			serializeAdmissionReview(t, getValidReviewWithTypeMeta(rawPodWithoutVolume, "admission.k8s.io/v1", "AdmissionReview")),
+			"application/json",
+			serializeAdmissionReview(t, &admissionv1.AdmissionReview{
+				TypeMeta: metav1.TypeMeta{
+					APIVersion: "admission.k8s.io/v1",
+					Kind:       "AdmissionReview",
+				},
+				Response: getValidHandlerResponse(uuid),
+			}),
 		},
 	}
 
