@@ -1,0 +1,6 @@
+# The upstream release this fork last merged (INF-586). Renovate tracks
+# the aws/amazon-eks-pod-identity-webhook releases through the custom
+# manager in renovate.json — a bump PR here is the signal to merge
+# upstream again (see CONTRIBUTING.md), never an automatic rebase.
+# renovate: datasource=github-releases depName=aws/amazon-eks-pod-identity-webhook
+v0.6.17

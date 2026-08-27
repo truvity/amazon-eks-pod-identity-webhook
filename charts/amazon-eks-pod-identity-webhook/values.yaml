@@ -27,8 +27,10 @@ image:
   pullPolicy: IfNotPresent
   # -- amazon-eks-pod-identity-webhook image registry
   registry: ghcr.io
-  # -- amazon-eks-pod-identity-webhook image repository
-  repository: truvity/amazon-eks-pod-identity-webhook
+  # -- amazon-eks-pod-identity-webhook image repository — nested under
+  # the repo namespace (INF-586 / INF-584 N1): ko names the artifact
+  # after the cmd dir (cmd/webhook).
+  repository: truvity/amazon-eks-pod-identity-webhook/webhook
   # -- amazon-eks-pod-identity-webhook image tag (immutable tags are recommended).
   # @default -- `.Chart.AppVersion`
   tag: ""

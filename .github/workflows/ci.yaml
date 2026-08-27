@@ -34,7 +34,7 @@ jobs:
       # context — a standard-library advisory with no released fix would
       # otherwise wedge every pull request on a finding nobody can act
       # on, which is exactly what happened to pulumi-zitadel.
-      recipes: '["build","test","lint"]'
+      recipes: '["build","test","lint","chart-lint"]'
 
   # Stable name for branch protection: the matrix reports as
   # "recipes / build" and so on, so a required context called "check"
