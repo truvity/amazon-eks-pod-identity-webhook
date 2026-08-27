@@ -9,7 +9,7 @@ fmt:
 
 # Build the webhook binary
 build: fmt
-    go build -o bin/webhook -ldflags="-s -w" .
+    go build -o bin/webhook -ldflags="-s -w" ./cmd/webhook
 
 # Run unit tests
 test:
@@ -32,16 +32,17 @@ clean:
     rm -rf bin/ dist/ coverage.out
 
 # Run all checks (build + test + lint + vuln)
-check: build test lint
+check: build test lint chart-lint
 
 # Build a snapshot release locally (no push, no tag)
 snapshot:
     goreleaser release --snapshot --clean
 
-# Lint the Helm chart
-helm-lint:
-    helm lint chart/
+# Lint + render the Helm chart
+chart-lint:
+    helm lint charts/amazon-eks-pod-identity-webhook
+    helm template webhook charts/amazon-eks-pod-identity-webhook >/dev/null
 
 # Package Helm chart locally
 helm-package:
-    helm package chart/ --destination dist/
+    helm package charts/amazon-eks-pod-identity-webhook --destination dist/

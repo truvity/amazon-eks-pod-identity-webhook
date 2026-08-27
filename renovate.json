@@ -58,6 +58,13 @@
         "go"
       ],
       "enabled": false
+    },
+    {
+      "description": "Upstream bumps are a human merge, never automerged.",
+      "matchDepNames": [
+        "aws/amazon-eks-pod-identity-webhook"
+      ],
+      "automerge": false
     }
   ],
   "vulnerabilityAlerts": {
@@ -66,5 +73,17 @@
     ],
     "automerge": true
   },
-  "constraintsFiltering": "strict"
+  "constraintsFiltering": "strict",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track upstream releases via hack/UPSTREAM_VERSION \u2014 a bump PR is the merge-upstream signal, not a rebase.",
+      "managerFilePatterns": [
+        "/^hack/UPSTREAM_VERSION$/"
+      ],
+      "matchStrings": [
+        "renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\s+(?<currentValue>v[0-9.]+)"
+      ]
+    }
+  ]
 }

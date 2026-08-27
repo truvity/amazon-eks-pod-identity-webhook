@@ -1,3 +1,9 @@
+# Tag-triggered release — the shared implementation (INF-586: this repo
+# was the last one bypassing it, with its own ko steps and a
+# `curl | sh` devbox install).
+#
+# The caller grants the permissions because a reusable workflow can
+# narrow them but never widen them.
 name: Release
 
 on:
@@ -9,33 +15,21 @@ permissions:
   contents: write
   packages: write
 
+# Never cancel a running publish — a half-pushed artifact set is worse
+# than a queued wait.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-
-      - uses: DeterminateSystems/determinate-nix-action@61cbfe2efc2d4e7a8a6d56967c3c1058e846c858 # v3
-
-      - name: Install devbox
-        run: curl -fsSL https://get.jetify.com/devbox | bash -s -- -f
-
-      - uses: ko-build/setup-ko@61b4d1d396f5b2e7d6bb6fefdce3dc38d1a13445 # v0.10
-
-      - name: Login to GHCR
-        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
-      - name: GoReleaser
-        run: devbox run -- goreleaser release --clean
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          KO_DOCKER_REPO: ghcr.io/truvity
-
-      - name: Package and push Helm chart
-        run: |
-          VERSION="${GITHUB_REF_NAME#v}"
-          echo "${{ secrets.GITHUB_TOKEN }}" | devbox run -- helm registry login ghcr.io -u ${{ github.actor }} --password-stdin
-          devbox run -- helm package chart/ --version "$VERSION" --app-version "$VERSION" --destination dist/
-          devbox run -- helm push dist/amazon-eks-pod-identity-webhook-${VERSION}.tgz oci://ghcr.io/truvity/charts
+    permissions:
+      contents: write
+      packages: write
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@7cff3700694ba492619ff3e0688341b91cd51a85 # v2.12.1
+    with:
+      charts: '["amazon-eks-pod-identity-webhook"]'
+      # Nest the image under the repo namespace (INF-586 / INF-584 N1):
+      # ko names the artifact after the cmd dir (cmd/webhook), so the
+      # published slug is ghcr.io/truvity/amazon-eks-pod-identity-webhook/webhook.
+      ko-docker-repo: ghcr.io/truvity/amazon-eks-pod-identity-webhook

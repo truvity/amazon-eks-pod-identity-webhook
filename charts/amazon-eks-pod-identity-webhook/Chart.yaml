@@ -1,5 +1,7 @@
 apiVersion: v2
-appVersion: 0.6.16-truvity.7
+# Placeholder — the real version is injected from the git tag (vX.Y.Z)
+# by ocictl helmctl at packaging; never bump by hand.
+appVersion: 0.0.0
 description: A Kubernetes webhook for pods that need AWS IAM access (Truvity fork with admission/v1 support)
 home: https://github.com/truvity/amazon-eks-pod-identity-webhook
 keywords:
@@ -19,4 +21,4 @@ sources:
 - https://github.com/aws/amazon-eks-pod-identity-webhook/
 - https://github.com/jkroepke/helm-charts/tree/main/charts/amazon-eks-pod-identity-webhook
 type: application
-version: 0.6.16-truvity.7
+version: 0.0.0
