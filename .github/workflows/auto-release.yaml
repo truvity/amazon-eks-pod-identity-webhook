@@ -1,11 +1,19 @@
 # The chain's last mile (INF-590): when renovate's automerged bumps
 # have moved master past the latest release, the shared workflow cuts
-# the next patch tag. DOUBLY GUARDED, off by default: the App
-# credentials must be entitled to this repo AND vars.AUTO_RELEASE must
-# be "true" — flipping it is the deliberate policy act. The v* tag
-# ruleset must carry the App bypass (gitops cfg/github.yaml) or the
-# push is rejected. Cron staggered per repo so Monday's releases don't
-# race each other's gitops pin PRs.
+# the next patch tag. DOUBLY GUARDED, off by default: the issuer must be
+# configured for the organisation AND vars.AUTO_RELEASE must be "true"
+# — flipping it is the deliberate policy act. The v* tag ruleset must
+# carry the tagging App's bypass (gitops cfg/github.yaml) or the push is
+# rejected. Cron staggered per repo so Monday's releases don't race each
+# other's gitops pin PRs.
+#
+# NO APP KEY HERE. The job exchanges its own GitHub identity token at the
+# access-roster issuer for an installation token of the catalogue App,
+# narrowed to this repository and to `contents: write` +
+# `pull_requests: read`. Nothing to entitle this repository to, nothing
+# to rotate, nothing to leak. `id-token: write` below is what the
+# exchange needs; the shared workflow can only narrow what is granted
+# here.
 name: Auto Release
 
 on:
@@ -15,12 +23,15 @@ on:
 
 permissions:
   contents: read
+  id-token: write # the token exchange, in the shared workflow's job
 
 jobs:
   tag:
-    if: vars.AUTO_RELEASE == 'true' && vars.CI_AUTOMATION_APP_ID != ''
-    uses: truvity/ci-workflows/.github/workflows/auto-release.yaml@681547390267ac3474ffed005d0723a9dd202b3d # v2.12.2
+    if: vars.AUTO_RELEASE == 'true' && vars.ACCESS_ROSTER_ISSUER != ''
+    # TODO: pin to the ci-workflows release with token-source on
+    # auto-release. DO NOT MERGE until this is a real commit.
+    uses: truvity/ci-workflows/.github/workflows/auto-release.yaml@a970d4b17140baadeceb8a4cd6e30eda9580d967 # v2.25.0
     with:
-      app-id: ${{ vars.CI_AUTOMATION_APP_ID }}
-    secrets:
-      CI_AUTOMATION_PRIVATE_KEY: ${{ secrets.CI_AUTOMATION_PRIVATE_KEY }}
+      token-source: access-roster
+      access-roster-issuer: ${{ vars.ACCESS_ROSTER_ISSUER }}
+      github-app: truvity-ci-automation
