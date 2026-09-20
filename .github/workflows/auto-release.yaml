@@ -30,7 +30,7 @@ jobs:
     if: vars.AUTO_RELEASE == 'true' && vars.ACCESS_ROSTER_ISSUER != ''
     # TODO: pin to the ci-workflows release with token-source on
     # auto-release. DO NOT MERGE until this is a real commit.
-    uses: truvity/ci-workflows/.github/workflows/auto-release.yaml@a970d4b17140baadeceb8a4cd6e30eda9580d967 # v2.25.0
+    uses: truvity/ci-workflows/.github/workflows/auto-release.yaml@ea3c238133634f69f0c51240ede27bb270e24dc0 # v3.0.1
     with:
       token-source: access-roster
       access-roster-issuer: ${{ vars.ACCESS_ROSTER_ISSUER }}

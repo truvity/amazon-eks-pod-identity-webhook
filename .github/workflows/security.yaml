@@ -16,6 +16,6 @@ jobs:
   # a hand-rolled copy that installed devbox through an UNPINNED
   # `curl | bash`. Deliberately not a required context.
   govulncheck:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@681547390267ac3474ffed005d0723a9dd202b3d # v2.12.2
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@ea3c238133634f69f0c51240ede27bb270e24dc0 # v3.0.1
     with:
       recipes: '["vuln"]'
