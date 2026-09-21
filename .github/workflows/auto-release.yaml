@@ -20,6 +20,13 @@ on:
   schedule:
     - cron: "13 6 * * 1"
   workflow_dispatch:
+  # The security lane (ci-workflows v2.15.0): a push whose merged pull
+  # request carries renovate's `security` label releases immediately;
+  # every other push exits quietly inside the shared workflow, so
+  # ordinary bumps still wait for the weekly schedule. Without this
+  # trigger a vulnerability fix sits unreleased until Monday.
+  push:
+    branches: [master]
 
 permissions:
   contents: read
