@@ -5,7 +5,7 @@
       "last_modified": "2026-09-13T01:58:51Z",
       "resolved": "github:NixOS/nixpkgs/02f5696b0e6097e589076d886b317b83ff0437d7?lastModified=1789264731"
     },
-    "go@latest": {
+    "go@1.27.0": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#go_1_27",
       "source": "devbox-search",
@@ -43,7 +43,7 @@
         }
       }
     },
-    "golangci-lint@latest": {
+    "golangci-lint@2.13.1": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#golangci-lint",
       "source": "devbox-search",
@@ -157,7 +157,7 @@
         }
       }
     },
-    "govulncheck@latest": {
+    "govulncheck@1.7.0": {
       "last_modified": "2026-08-27T07:16:00Z",
       "resolved": "github:NixOS/nixpkgs/c27cdad491a991b11ed731760aa2ef8db0cb0410#govulncheck",
       "source": "devbox-search",
