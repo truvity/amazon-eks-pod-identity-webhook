@@ -227,6 +227,18 @@ just check            # build + test + lint + chart-lint + leak-canary (what CI'
 just snapshot         # local GoReleaser snapshot (image + binary)
 ```
 
+`.github/workflows/upstream-sync.yaml` runs the steps below on its own,
+daily and on `workflow_dispatch`: it fetches upstream's `master`, and
+where it carries commits this fork doesn't have, opens a pull request
+merging them in, with the upstream commit list in the body. It never
+resolves a conflict — a conflicting merge gets an issue instead, naming
+the upstream commit and stopping there, for a person to merge by hand.
+**Merge a sync pull request as a merge commit**, never rebase or squash
+it: this repository's merge-commit button is enabled (a per-repo gitops
+override, layered on the public preset's rebase/squash-only default)
+for exactly this — a rebase or squash rewrites the graph and loses the
+merge-base the next day's run compares against.
+
 ## Syncing With Upstream
 
 ```bash
