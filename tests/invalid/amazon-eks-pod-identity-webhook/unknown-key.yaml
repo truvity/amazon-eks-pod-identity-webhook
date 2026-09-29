@@ -1,0 +1,9 @@
+# Refused by values.schema.json's top-level `additionalProperties: false`:
+# a values file every other key in is otherwise unchanged, so the render
+# fails for exactly one reason — the unknown key — proving the schema is
+# enforced rather than silently ignored. config.defaultAwsRegion is set
+# to a valid value so this fixture is refused for its own reason, not
+# because region is missing (that is tests/invalid/missing-region.yaml).
+config:
+  defaultAwsRegion: eu-example-1
+unknownTopLevelOption: true

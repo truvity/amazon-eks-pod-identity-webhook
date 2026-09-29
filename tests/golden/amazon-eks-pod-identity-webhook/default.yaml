@@ -1,0 +1,253 @@
+---
+# Source: amazon-eks-pod-identity-webhook/templates/serviceaccount.yaml
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: webhook-amazon-eks-pod-identity-webhook
+  namespace: default
+  labels:
+    helm.sh/chart: amazon-eks-pod-identity-webhook-0.0.0
+    app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+    app.kubernetes.io/instance: webhook
+    app.kubernetes.io/version: "0.0.0"
+
+---
+# Source: amazon-eks-pod-identity-webhook/templates/clusterrole.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: webhook-amazon-eks-pod-identity-webhook
+  labels:
+    helm.sh/chart: amazon-eks-pod-identity-webhook-0.0.0
+    app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+    app.kubernetes.io/instance: webhook
+    app.kubernetes.io/version: "0.0.0"
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - get
+      - watch
+      - list
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests
+    verbs:
+      - create
+      - get
+      - list
+      - watch
+
+---
+# Source: amazon-eks-pod-identity-webhook/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: webhook-amazon-eks-pod-identity-webhook
+  labels:
+    helm.sh/chart: amazon-eks-pod-identity-webhook-0.0.0
+    app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+    app.kubernetes.io/instance: webhook
+    app.kubernetes.io/version: "0.0.0"
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: webhook-amazon-eks-pod-identity-webhook
+subjects:
+  - kind: ServiceAccount
+    name: webhook-amazon-eks-pod-identity-webhook
+    namespace: default
+
+---
+# Source: amazon-eks-pod-identity-webhook/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: webhook-amazon-eks-pod-identity-webhook
+  namespace: default
+  labels:
+    helm.sh/chart: amazon-eks-pod-identity-webhook-0.0.0
+    app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+    app.kubernetes.io/instance: webhook
+    app.kubernetes.io/version: "0.0.0"
+spec:
+  type: ClusterIP
+  ports:
+    - port: 8443
+      targetPort: https
+      protocol: TCP
+      appProtocol: https
+      name: https
+    - port: 9999
+      targetPort: metrics
+      appProtocol: http
+      protocol: TCP
+      name: metrics
+  selector:
+    app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+    app.kubernetes.io/instance: webhook
+
+---
+# Source: amazon-eks-pod-identity-webhook/templates/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: webhook-amazon-eks-pod-identity-webhook
+  namespace: default
+  labels:
+    helm.sh/chart: amazon-eks-pod-identity-webhook-0.0.0
+    app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+    app.kubernetes.io/instance: webhook
+    app.kubernetes.io/version: "0.0.0"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+      app.kubernetes.io/instance: webhook
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+        app.kubernetes.io/instance: webhook
+    spec:
+      containers:
+        - name: amazon-eks-pod-identity-webhook
+          image: "ghcr.io/truvity/amazon-eks-pod-identity-webhook/webhook:0.0.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - --annotation-prefix=eks.amazonaws.com
+            - --aws-default-region=us-east-1
+            - --in-cluster=false
+            - --logtostderr
+            - --namespace=$(POD_NAMESPACE)
+            - --metrics-port=9999
+            - --port=8443
+            - --service-name=webhook-amazon-eks-pod-identity-webhook
+            - --sts-regional-endpoint=true
+            - --token-audience=sts.amazonaws.com
+            - --token-expiration=86400
+            - --token-mount-path=/var/run/secrets/eks.amazonaws.com/serviceaccount
+            - --tls-cert=/etc/webhook/certs/tls.crt
+            - --tls-key=/etc/webhook/certs/tls.key
+          ports:
+            - name: https
+              containerPort: 8443
+              protocol: TCP
+            - name: metrics
+              containerPort: 9999
+              protocol: TCP
+          env:
+            - name: POD_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: https
+              scheme: HTTPS
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: https
+              scheme: HTTPS
+          resources:
+            limits: {}
+            requests: {}
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - ALL
+            readOnlyRootFilesystem: true
+            runAsGroup: 1
+            runAsNonRoot: true
+            runAsUser: 65534
+          volumeMounts:
+            - name: cert
+              mountPath: "/etc/webhook/certs"
+              readOnly: true
+      hostNetwork: false
+      serviceAccountName: webhook-amazon-eks-pod-identity-webhook
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      volumes:
+        - name: cert
+          secret:
+            secretName: "webhook-amazon-eks-pod-identity-webhook-cert"
+
+---
+# Source: amazon-eks-pod-identity-webhook/templates/mutatingwebhook.yaml
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  annotations:
+    cert-manager.io/inject-ca-from: default/webhook-amazon-eks-pod-identity-webhook
+  name: webhook-amazon-eks-pod-identity-webhook
+webhooks:
+  - name: pod-identity-webhook.amazonaws.com
+    admissionReviewVersions:
+      - v1
+    failurePolicy: "Ignore"
+    clientConfig:
+      service:
+        name: webhook-amazon-eks-pod-identity-webhook
+        namespace: default
+        port: 8443
+        path: "/mutate"
+    rules:
+      - operations: [ "CREATE" ]
+        apiGroups: [""]
+        apiVersions: ["v1"]
+        resources: ["pods"]
+    objectSelector:
+      matchExpressions:
+        - key: "eks.amazonaws.com/skip-pod-identity-webhook"
+          operator: "DoesNotExist"
+          values: []
+        - key: "app.kubernetes.io/name"
+          operator: "NotIn"
+          values:
+            - "amazon-eks-pod-identity-webhook"
+    sideEffects: None
+
+---
+# Source: amazon-eks-pod-identity-webhook/templates/certificate.yaml
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: webhook-amazon-eks-pod-identity-webhook
+  namespace: default
+spec:
+  secretName: "webhook-amazon-eks-pod-identity-webhook-cert"
+  commonName: "webhook-amazon-eks-pod-identity-webhook"
+  dnsNames:
+    - "webhook-amazon-eks-pod-identity-webhook"
+    - "webhook-amazon-eks-pod-identity-webhook.default"
+    - "webhook-amazon-eks-pod-identity-webhook.default.svc"
+    - "webhook-amazon-eks-pod-identity-webhook.default.svc.local"
+  duration: "2160h"
+  renewBefore: "360h"
+  issuerRef:
+    name: webhook-amazon-eks-pod-identity-webhook
+    kind: Issuer
+
+---
+# Source: amazon-eks-pod-identity-webhook/templates/issuer.yaml
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: webhook-amazon-eks-pod-identity-webhook
+  namespace: default
+  labels:
+    helm.sh/chart: amazon-eks-pod-identity-webhook-0.0.0
+    app.kubernetes.io/name: amazon-eks-pod-identity-webhook
+    app.kubernetes.io/instance: webhook
+    app.kubernetes.io/version: "0.0.0"
+spec:
+  selfSigned: {}

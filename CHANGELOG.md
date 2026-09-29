@@ -2,6 +2,33 @@
 
 All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are documented here.
 
+## v2.0.1
+
+Conformance to `truvity/policy`'s component contract (`docs/contracts/component.md`,
+rules C3, C4, C5, C7, C8, C9) — no behavioural change to the webhook binary
+or the chart's rendered output.
+
+- Added `tests/golden/amazon-eks-pod-identity-webhook/default.yaml` and
+  `tests/cases/amazon-eks-pod-identity-webhook/default.yaml` (the values
+  the golden is rendered from), plus `tests/invalid/amazon-eks-pod-identity-webhook/`
+  fixtures proving `values.schema.json` refuses an unknown top-level key
+  and a missing `config.defaultAwsRegion`; `chart-lint` diffs the golden
+  and loops every invalid fixture (C3).
+- Vendored `hack/leak-canary.sh` from `truvity/ci-workflows` and wired it
+  into `just check`, with narrow, file-scoped exclusions for AWS's own
+  documented example account IDs in upstream fixtures, the ARN-validating
+  regexp in `pkg/cache/cache.go`, the `.svc.cluster.local` suffix built in
+  `cmd/webhook/main.go`, and the `/var/run/secrets/` token-mount path (C4).
+- Reformatted CHANGELOG headings to `## vX.Y.Z — date` (C5).
+- `renovate.json`'s `extends` now names only `github>truvity/ci-workflows`,
+  with the overrides beyond it documented (C7).
+- Restructured `README.md` to the contract's required headings, in order,
+  and fixed its worked install example to set the now-required
+  `config.defaultAwsRegion` (C8).
+- Added `.github/policy-conformance.yaml`, declaring this repository's
+  `LICENSE` exempt from the contract's MIT-at-root rule as a derivative
+  of the Apache-2.0 `aws/amazon-eks-pod-identity-webhook` (C9).
+
 ## v2.0.0
 
 **Breaking:** `config.defaultAwsRegion` no longer defaults to `us-east-1`; it is now required and must be set explicitly to the AWS region for your cluster (component contract rule C13: estate facts are inputs, never defaults). Set it via `--set config.defaultAwsRegion=eu-central-1` (or your region) when installing the chart. Helm validation now rejects charts rendered without this value.
@@ -16,7 +43,7 @@ All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are d
 - Kubernetes 1.36 compatibility re-verified: resolved since v0.6.16-truvity.1 (`admission/v1`, `k8s.io/*` on the v0.36 line); README carries a dated `Fork status` section.
 - Release notes name the image where it actually publishes (`…/amazon-eks-pod-identity-webhook/webhook`); `renovate.json` extends the shared preset; ci-workflows pins moved to v3.13.1.
 
-## [0.6.17-truvity.1] — 2026-07-04
+## v0.6.17-truvity.1 — 2026-07-04
 
 ### Changed
 - Go toolchain updated to 1.26.4 via devbox (security: CVE-2026-42504 mime quadratic complexity)
@@ -38,14 +65,14 @@ All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are d
 - golang.org/x/net v0.56.0 addresses CVE-2026-33814, CVE-2026-39821, CVE-2026-25680/25681/27136/42502/42506
 - govulncheck reports no known vulnerabilities in dependency tree
 
-## [0.6.16-truvity.4] — 2026-06-21
+## v0.6.16-truvity.4 — 2026-06-21
 
 ### Fixed
 - devbox.json: use `kubernetes-helm` package name (not `helm` — segfaulted in CI)
 - devbox.json: add `GOEXPERIMENT=jsonv2` env var
 - devbox.json: add `gopls`, `just-lsp` packages (matches org repos)
 
-## [0.6.16-truvity.3] — 2026-06-21
+## v0.6.16-truvity.3 — 2026-06-21
 
 ### Changed
 - **Build: Dockerfile → GoReleaser + ko** — pure ko-based container image on `distroless/static:nonroot`, no Docker-in-Docker, no bootstrapped Go toolchain
@@ -73,12 +100,12 @@ All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are d
 - `.github/dependabot.yml` (replaced by Renovate)
 - `dependabot-auto-merge.yaml` workflow
 
-## [0.6.16-truvity.2] — 2026-05-23
+## v0.6.16-truvity.2 — 2026-05-23
 
 ### Fixed
 - Restored Helm chart and chart release workflow
 
-## [0.6.16-truvity.1] — 2026-05-22
+## v0.6.16-truvity.1 — 2026-05-22
 
 ### Added
 - **admission/v1 migration** — webhook uses `admission/v1` (upstream uses deprecated `v1beta1` removed in K8s 1.35)
