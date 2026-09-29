@@ -8,9 +8,12 @@ A Kubernetes webhook for pods that need AWS IAM access
 
 ## Installation
 
+Set the AWS region for your cluster (required):
+
 ```shell
 helm repo add jkroepke https://jkroepke.github.io/helm-charts/
-helm install amazon-eks-pod-identity-webhook jkroepke/amazon-eks-pod-identity-webhook
+helm install amazon-eks-pod-identity-webhook jkroepke/amazon-eks-pod-identity-webhook \
+  --set config.defaultAwsRegion=eu-central-1
 ```
 
 ## Maintainers
@@ -31,7 +34,7 @@ helm install amazon-eks-pod-identity-webhook jkroepke/amazon-eks-pod-identity-we
 | affinity | object | `{}` | Affinity for pod assignment |
 | annotations | object | `{}` | Annotations for amazon-eks-pod-identity-webhook deployment |
 | config.annotationPrefix | string | `"eks.amazonaws.com"` | The Service Account annotation to look for (default "eks.amazonaws.com") |
-| config.defaultAwsRegion | string | `"us-east-1"` | If set, AWS_DEFAULT_REGION and AWS_REGION will be set to this value in mutated containers |
+| config.defaultAwsRegion | string | `` | AWS region to inject into mutated containers (required; component contract C13) |
 | config.extraArgs | list | `[]` | Additional command line arguments to pass to amazon-eks-pod-identity-webhook |
 | config.podIdentityWebhookMap.data | object | `{}` | Content of pod-identity-webhook configmap. Values support templating. |
 | config.podIdentityWebhookMap.enabled | bool | `false` | Enabled pod-identity-webhook ConfigMap. See https://github.com/aws/amazon-eks-pod-identity-webhook#pod-identity-webhook-configmap |

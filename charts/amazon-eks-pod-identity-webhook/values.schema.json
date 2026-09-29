@@ -21,7 +21,9 @@
           "type": "string"
         },
         "defaultAwsRegion": {
-          "type": "string"
+          "type": "string",
+          "description": "AWS region to inject into mutated containers; must be set to a valid AWS region (required by component contract rule C13: estate facts are inputs, never defaults)",
+          "minLength": 1
         },
         "extraArgs": {
           "type": "array"
@@ -64,7 +66,8 @@
         "tokenMountPath": {
           "type": "string"
         }
-      }
+      },
+      "required": ["defaultAwsRegion"]
     },
     "fullnameOverride": {
       "type": "string"

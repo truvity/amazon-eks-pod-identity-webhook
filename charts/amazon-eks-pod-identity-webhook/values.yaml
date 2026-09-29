@@ -42,7 +42,7 @@ config:
   # -- The Service Account annotation to look for (default "eks.amazonaws.com")
   annotationPrefix: eks.amazonaws.com
   # -- If set, AWS_DEFAULT_REGION and AWS_REGION will be set to this value in mutated containers
-  defaultAwsRegion: us-east-1
+  defaultAwsRegion: ""
   # -- Additional command line arguments to pass to amazon-eks-pod-identity-webhook
   extraArgs: []
 
