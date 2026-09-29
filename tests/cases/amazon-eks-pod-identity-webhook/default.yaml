@@ -1,0 +1,8 @@
+# The default render case: only the one value the schema requires
+# (component contract rule C13 — config.defaultAwsRegion has no default,
+# an estate fact is an input, never a default). Everything else is the
+# chart's own default. `just golden` and `chart-lint` both render from
+# this file, so the golden diff and the values file agree on what
+# "default" means.
+config:
+  defaultAwsRegion: eu-example-1

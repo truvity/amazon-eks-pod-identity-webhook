@@ -1,0 +1,8 @@
+# Refused by values.schema.json: config.defaultAwsRegion is required
+# (component contract rule C13 — estate facts are inputs, never
+# defaults) with minLength 1, and the chart's own default is now the
+# empty string. This file sets nothing at all, so the only reason it is
+# refused is the missing region — the same behaviour chart-lint's
+# inline `helm lint | grep minLength` check exercises, proved here via
+# the tests/invalid/ fixture loop instead.
+{}

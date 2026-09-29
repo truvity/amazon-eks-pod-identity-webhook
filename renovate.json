@@ -1,9 +1,9 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "github>truvity/ci-workflows",
-    "security:gomodIndirectSecurityUpdates"
+    "github>truvity/ci-workflows"
   ],
+  "description": "Overrides beyond the shared preset: OSV vulnerability alerts, a weekly lockfile-maintenance window and strict Go toolchain constraint filtering. Each packageRules/customManagers entry documents its own exception.",
   "osvVulnerabilityAlerts": true,
   "lockFileMaintenance": {
     "enabled": true,

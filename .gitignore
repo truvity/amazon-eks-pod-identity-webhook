@@ -1,6 +1,10 @@
 *.swp
 .idea
-amazon-eks-pod-identity-webhook
+# Anchored to the root: a stray binary from `go build .`. Unanchored, this
+# also matched tests/golden/amazon-eks-pod-identity-webhook/ and
+# tests/invalid/amazon-eks-pod-identity-webhook/ (component contract C3),
+# silently dropping both from `git add`.
+/amazon-eks-pod-identity-webhook
 deploy/deployment.yaml
 build
 bin/

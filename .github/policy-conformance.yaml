@@ -1,0 +1,5 @@
+# Named exceptions to the component contract's checkable rules. See
+# https://github.com/truvity/policy/blob/master/docs/contracts/component.md#exemptions
+exempt:
+  C9:
+    reason: fork of aws/amazon-eks-pod-identity-webhook (Apache-2.0); a derivative work cannot relicense
