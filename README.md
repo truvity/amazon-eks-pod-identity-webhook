@@ -82,7 +82,7 @@ just check                                         # verify build + test + lint 
 
 ## Consumers
 
-- **opwerm/nexus** — deploys the Helm chart (`ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook`) as the `pod-identity-webhook` Argo CD Application, to give IRSA-style AWS credentials to any pod on Talos, the way EKS gives it natively.
+- **A second, non-AWS estate** — deploys the Helm chart (`ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook`) as the `pod-identity-webhook` Argo CD Application, to give IRSA-style AWS credentials to any pod on Talos, the way EKS gives it natively.
 
 ## Neighbours
 
@@ -92,7 +92,7 @@ just check                                         # verify build + test + lint 
 ## Fork status
 
 - **Upstream sync:** last merged `aws/amazon-eks-pod-identity-webhook@master` through commit [`81bcb64`](https://github.com/aws/amazon-eks-pod-identity-webhook/commit/81bcb64a91e08b9de60c9d8f9df299f57075b09f) (Go 1.26.7 bump) on 2026-09-29. Upstream's latest tagged release remains `v0.6.17`; the single commit past it is a toolchain bump the fork had already matched independently.
-- **Kubernetes 1.36 compatibility (checked 2026-09-29):** resolved, and has been since `v0.6.16-truvity.1` (2026-05-22). The webhook's admission handler was migrated from the removed `admission/v1beta1` review payload to `admission/v1` (see "Why This Fork Exists" above), and `k8s.io/client-go`/`k8s.io/api`/`k8s.io/apimachinery` are tracked on the `v0.36.x` line, the Kubernetes 1.36 family — client-go's own skew policy additionally covers apiserver 1.35 and 1.37. `admissionregistration.k8s.io/v1` (the `MutatingWebhookConfiguration` API this chart ships) has been stable since Kubernetes 1.16 and nothing in the Kubernetes 1.36 changelog removes or changes it, `certificates.k8s.io`, or the admission review path. No further code change was needed for 1.36. opwerm/nexus runs this chart against a live Kubernetes 1.36.4 cluster with no reported incompatibility.
+- **Kubernetes 1.36 compatibility (checked 2026-09-29):** resolved, and has been since `v0.6.16-truvity.1` (2026-05-22). The webhook's admission handler was migrated from the removed `admission/v1beta1` review payload to `admission/v1` (see "Why This Fork Exists" above), and `k8s.io/client-go`/`k8s.io/api`/`k8s.io/apimachinery` are tracked on the `v0.36.x` line, the Kubernetes 1.36 family — client-go's own skew policy additionally covers apiserver 1.35 and 1.37. `admissionregistration.k8s.io/v1` (the `MutatingWebhookConfiguration` API this chart ships) has been stable since Kubernetes 1.16 and nothing in the Kubernetes 1.36 changelog removes or changes it, `certificates.k8s.io`, or the admission review path. No further code change was needed for 1.36. A second, non-AWS estate runs this chart against a live Kubernetes 1.36.4 cluster with no reported incompatibility.
 
 ## License
 
