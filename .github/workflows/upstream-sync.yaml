@@ -21,12 +21,17 @@
 # one class of pull request can be merged that way.
 #
 # CONFLICT HANDLING: on a merge conflict this job does not touch a
-# single line to resolve it. It aborts the merge, opens an issue naming
-# the upstream commit and the conflicting paths, and stops — no branch,
-# no pull request. A human (or an agent with more context than a cron
-# job) resolves it and re-runs `workflow_dispatch` once the fix lands
-# on master by hand, at which point the ancestry check sees the two
-# histories reconciled and does nothing further for that upstream SHA.
+# single line to resolve it. It aborts the merge, writes the upstream
+# commit and the conflicting paths to the job summary, and fails the
+# run — no branch, no pull request, no issue. The App installation
+# behind this job's token is scoped to `contents:write` and
+# `pull_requests:write` only (see TOKEN below); it does not hold
+# `issues:write`, so a failed run's red X and GitHub's own
+# failed-workflow notification are the signal. A human (or an agent
+# with more context than a cron job) resolves it and re-runs
+# `workflow_dispatch` once the fix lands on master by hand, at which
+# point the ancestry check sees the two histories reconciled and does
+# nothing further for that upstream SHA.
 #
 # TOKEN: the same access-roster exchange this repo's auto-release.yaml
 # uses (truvity/access-roster, narrowed to this repository) rather than
@@ -73,15 +78,17 @@ jobs:
         run: echo "name=${REPO#*/}" >> "$GITHUB_OUTPUT"
 
       # THIS repository only. contents:write pushes the sync branch,
-      # pull_requests:write opens the PR, issues:write opens the
-      # conflict issue on the rare path that needs one.
+      # pull_requests:write opens the PR. Least privilege: the
+      # truvity-ci-automation App installation carries no issues:write
+      # (it's installed on every repository), so a conflict fails the
+      # run instead of opening an issue — see CONFLICT HANDLING above.
       - uses: truvity/access-roster@6ce99fe347c0bc6e871932e025bc78f7f40c54f0 # v1.39.2
         id: token
         with:
           issuer: ${{ vars.ACCESS_ROSTER_ISSUER }}
           github-app: truvity-ci-automation
           repositories: ${{ steps.repo.outputs.name }}
-          permissions: contents:write,pull_requests:write,issues:write
+          permissions: contents:write,pull_requests:write
 
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -147,6 +154,11 @@ jobs:
           if git merge --no-edit upstream/master; then
             echo "conflict=false" >> "$GITHUB_OUTPUT"
           else
+            {
+              echo "files<<UPSTREAM_CONFLICT_FILES_EOF"
+              git diff --name-only --diff-filter=U
+              echo "UPSTREAM_CONFLICT_FILES_EOF"
+            } >> "$GITHUB_OUTPUT"
             git merge --abort
             echo "conflict=true" >> "$GITHUB_OUTPUT"
           fi
@@ -219,45 +231,41 @@ jobs:
             --title "chore: sync upstream through aws/amazon-eks-pod-identity-webhook@${SHORT}" \
             --body "$body"
 
-      # `gh issue create --label` fails outright on a label that doesn't
-      # exist yet; this repo has never needed one for a bot-filed issue
-      # before. Idempotent — a second run's create call 422s and is
-      # swallowed.
-      - name: Ensure the upstream-sync label exists
+      # No issues:write on this job's token (least privilege — see
+      # CONFLICT HANDLING and the access-roster step above), so a
+      # conflict fails the run instead of filing an issue. The job
+      # summary carries everything a person needs to resolve it by
+      # hand; GitHub's own failed-workflow notification is the signal
+      # that this ran and needs attention.
+      - name: On a conflict, summarize and fail
         if: steps.merge.outputs.conflict == 'true'
         env:
-          GH_TOKEN: ${{ steps.token.outputs.github-token }}
-        run: |
-          gh label create upstream-sync --repo "$GITHUB_REPOSITORY" \
-            --description "Filed by .github/workflows/upstream-sync.yaml" \
-            --color 5319e7 2>/dev/null || true
-
-      - name: On a conflict, open an issue and stop
-        if: steps.merge.outputs.conflict == 'true'
-        env:
-          GH_TOKEN: ${{ steps.token.outputs.github-token }}
           SHORT: ${{ steps.check.outputs.sha }}
           FULL: ${{ steps.check.outputs.full_sha }}
           COMMITS: ${{ steps.commits.outputs.list }}
+          FILES: ${{ steps.merge.outputs.files }}
         run: |
           set -euo pipefail
-          title="Upstream sync conflict at aws/amazon-eks-pod-identity-webhook@${SHORT}"
-          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"${title}\"" --json number --jq 'length')
-          if [ "$existing" -gt 0 ]; then
-            echo "an open issue for ${SHORT} already exists — not filing a duplicate." >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-          body="\`git merge --no-edit upstream/master\` conflicts merging
-          \`aws/amazon-eks-pod-identity-webhook@${SHORT}\` (${FULL}) into
-          \`master\`. This job does not resolve conflicts — merge upstream
-          by hand (see README \"Syncing With Upstream\"), push the result to
-          \`master\` yourself or through a normal pull request, then close
-          this issue; the next scheduled run sees the histories reconciled
-          and does nothing further for this SHA.
-
-          Upstream commits this sync was attempting to bring in:
-
-          ${COMMITS}
-          "
-          gh issue create --repo "$GITHUB_REPOSITORY" \
-            --title "$title" --body "$body" --label upstream-sync
+          {
+            echo "### Upstream sync conflict"
+            echo
+            echo "\`git merge --no-edit upstream/master\` conflicts merging"
+            echo "\`aws/amazon-eks-pod-identity-webhook@${SHORT}\` (${FULL}) into"
+            echo "\`master\`. This job does not resolve conflicts — merge upstream"
+            echo "by hand (see README \"Syncing With Upstream\"), push the result to"
+            echo "\`master\` yourself or through a normal pull request, then re-run"
+            echo "\`workflow_dispatch\`; the ancestry check will see the histories"
+            echo "reconciled and do nothing further for this SHA."
+            echo
+            echo "**Conflicting files:**"
+            echo
+            echo '```'
+            echo "$FILES"
+            echo '```'
+            echo
+            echo "**Upstream commits this sync was attempting to bring in:**"
+            echo
+            echo "$COMMITS"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::error::Upstream sync conflict merging aws/amazon-eks-pod-identity-webhook@${SHORT} — see job summary for conflicting files"
+          exit 1

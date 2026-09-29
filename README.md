@@ -231,8 +231,12 @@ just snapshot         # local GoReleaser snapshot (image + binary)
 daily and on `workflow_dispatch`: it fetches upstream's `master`, and
 where it carries commits this fork doesn't have, opens a pull request
 merging them in, with the upstream commit list in the body. It never
-resolves a conflict — a conflicting merge gets an issue instead, naming
-the upstream commit and stopping there, for a person to merge by hand.
+resolves a conflict — a conflicting merge is aborted, the job summary
+gets the upstream SHA and the conflicting files, and the run fails.
+There's no issue: the job's token is scoped to `contents:write` and
+`pull_requests:write` only, so GitHub's own failed-run notification and
+the red X are the signal that a sync needs a person to merge upstream
+by hand and re-run `workflow_dispatch`.
 **Merge a sync pull request as a merge commit**, never rebase or squash
 it: this repository's merge-commit button is enabled (a per-repo gitops
 override, layered on the public preset's rebase/squash-only default)
