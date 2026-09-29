@@ -11,10 +11,6 @@
       "before 6am"
     ]
   },
-  "ignorePaths": [
-    "devbox.json",
-    "devbox.lock"
-  ],
   "packageRules": [
     {
       "description": "The go directive is OWNED by devbox-update (ci-workflows v2.10.0): it aligns go.mod to the toolchain triple in the same PR as devbox.lock — language minor capped by golangci-lint's build Go, patch = the newest release of that line, never downward. Renovate leaves `go` alone so the three can never disagree (2026-08-23; replaces the bump rule and the minor/strict gates that papered over split ownership).",
