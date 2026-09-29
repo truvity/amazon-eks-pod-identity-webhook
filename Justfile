@@ -48,12 +48,18 @@ chart-lint:
     set -euo pipefail
     # Regression: defaultAwsRegion is required (component contract C13).
     # helm lint must fail with empty defaultAwsRegion, showing minLength validation error.
-    if helm lint charts/amazon-eks-pod-identity-webhook 2>&1 | grep -q "minLength"; then
-        echo "OK: empty config.defaultAwsRegion is correctly refused (minLength)"
-    else
+    # (Captured via command substitution, not a `helm lint | grep` pipe —
+    # under `pipefail`, helm lint's own non-zero exit would fail the `if`
+    # even when grep found its match.)
+    if lint_out=$(helm lint charts/amazon-eks-pod-identity-webhook 2>&1); then
         echo "ERROR: amazon-eks-pod-identity-webhook accepted an empty config.defaultAwsRegion" >&2
         exit 1
+    elif ! grep -q "minLength" <<<"$lint_out"; then
+        echo "ERROR: helm lint on an empty config.defaultAwsRegion failed for a reason other than minLength:" >&2
+        echo "$lint_out" >&2
+        exit 1
     fi
+    echo "OK: empty config.defaultAwsRegion is correctly refused (minLength)"
     # Regression: lint succeeds with a valid region set.
     helm lint charts/amazon-eks-pod-identity-webhook \
         --values tests/cases/amazon-eks-pod-identity-webhook/default.yaml
