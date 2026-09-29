@@ -15,10 +15,11 @@ or the chart's rendered output.
   and a missing `config.defaultAwsRegion`; `chart-lint` diffs the golden
   and loops every invalid fixture (C3).
 - Vendored `hack/leak-canary.sh` from `truvity/ci-workflows` and wired it
-  into `just check`, with narrow, file-scoped exclusions for AWS's own
+  into `just check`, with narrow, per-pattern exclusions for AWS's own
   documented example account IDs in upstream fixtures, the ARN-validating
-  regexp in `pkg/cache/cache.go`, the `.svc.cluster.local` suffix built in
-  `cmd/webhook/main.go`, and the `/var/run/secrets/` token-mount path (C4).
+  regexp in `pkg/cache/cache.go`, the in-cluster DNS suffix built in
+  `cmd/webhook/main.go`, and the Kubernetes ServiceAccount token-mount
+  convention (C4).
 - Reformatted CHANGELOG headings to `## vX.Y.Z — date` (C5).
 - `renovate.json`'s `extends` now names only `github>truvity/ci-workflows`,
   with the overrides beyond it documented (C7).

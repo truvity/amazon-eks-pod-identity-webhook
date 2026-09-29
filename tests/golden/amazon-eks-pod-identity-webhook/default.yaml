@@ -120,7 +120,7 @@ spec:
           imagePullPolicy: IfNotPresent
           args:
             - --annotation-prefix=eks.amazonaws.com
-            - --aws-default-region=us-east-1
+            - --aws-default-region=eu-example-1
             - --in-cluster=false
             - --logtostderr
             - --namespace=$(POD_NAMESPACE)

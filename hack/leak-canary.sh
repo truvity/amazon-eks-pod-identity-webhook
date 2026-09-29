@@ -6,6 +6,11 @@
 #
 # Add a pattern here the first time something new turns out to be a
 # particular. Never add an exception without one.
+#
+# Copied from truvity/ci-workflows, narrowed here as truvity/ci-plane's own
+# copy is: one ALLOW regex per pattern (see `allows` below), not a single
+# repo-wide filter — an allowance for one pattern must not quietly forgive
+# a hit under a different pattern.
 set -uo pipefail
 
 # The 12-digit patterns are anchored on word boundaries. Without them,
@@ -44,34 +49,54 @@ mapfile -d '' tracked < <(git ls-files -z)
 
 # Narrowed for THIS repository: a fork of aws/amazon-eks-pod-identity-webhook,
 # a project whose subject matter IS AWS ARNs, EKS ServiceAccount tokens and
-# IAM role annotations. Each line below is mechanism the matched text
+# IAM role annotations. Each entry below is mechanism the matched text
 # describes, not a Truvity particular (component contract C4's own
 # exception: "Mechanism that is the matched text" -- narrow with a reason,
-# never weaken the pattern for everyone else).
-#
-#   - 123456789012 and 111122223333 are AWS's own documented example
-#     account IDs, used throughout AWS's IAM/EKS documentation and carried
-#     over verbatim from upstream's own hack/ fixtures and pkg/handler test
-#     data -- not a Truvity account.
-#   - pkg/cache/cache.go's `arn:aws` is a Go regexp literal that VALIDATES
-#     the shape of an ARN a caller supplies; it embeds no account of its
-#     own.
-#   - cmd/webhook/main.go's `.svc.cluster.local` is the fixed Kubernetes
-#     in-cluster DNS suffix, built at runtime from the webhook's own
-#     Service/Namespace flags -- identical on every cluster, not a Truvity
-#     hostname.
-#   - /var/run/secrets/... is Kubernetes' own ServiceAccount-token and
-#     TLS-secret mount convention (the same path upstream's code and the
-#     Kubernetes docs use), not an SSM parameter path -- the shape `/secrets/`
-#     otherwise means.
-ALLOWED='123456789012|111122223333|pkg/cache/cache\.go|cmd/webhook/main\.go:[0-9]+:.*svc\.cluster\.local|/var/run/secrets/'
+# never weaken the pattern for everyone else). One allow regex per pattern
+# above, same order; an empty string allows nothing for that pattern.
+allows=(
+  # 123456789012 and 111122223333 are AWS's own documented example account
+  # IDs, used throughout AWS's IAM/EKS documentation and carried over
+  # verbatim from upstream's own hack/ fixtures and pkg/handler test data
+  # -- not a Truvity account. Not file-scoped: they appear across every
+  # upstream-derived fixture and test file, by design.
+  '123456789012|111122223333'
+  # Same two documented account IDs (an "arn:aws..." role ARN built from
+  # one of them), plus pkg/cache/cache.go's `arn:aws` -- a Go regexp
+  # literal that VALIDATES the shape of an ARN a caller supplies; it
+  # embeds no account of its own.
+  '123456789012|111122223333|pkg/cache/cache\.go'
+  ''
+  # cmd/webhook/main.go's in-cluster DNS suffix is built at runtime from
+  # the webhook's own Service/Namespace flags -- identical on every
+  # cluster, not a Truvity hostname. File-scoped: nowhere else in the
+  # tree needs this shape.
+  'cmd/webhook/main\.go'
+  # Kubernetes' own ServiceAccount-token and TLS-secret mount convention
+  # (the same path upstream's code and the Kubernetes docs use), not an
+  # SSM parameter path -- the shape this pattern otherwise means.
+  '/var/run/secrets/'
+  ''
+  ''
+  ''
+)
 
-for p in "${patterns[@]}"; do
+if [ "${#patterns[@]}" -ne "${#allows[@]}" ]; then
+  echo "leak-canary.sh: ${#patterns[@]} patterns but ${#allows[@]} allowances" >&2
+  exit 2
+fi
+
+for i in "${!patterns[@]}"; do
+  p=${patterns[$i]}
+  allow=${allows[$i]}
   # Exclude this script: it necessarily contains the patterns it bans.
-  if hits=$(printf '%s\0' "${tracked[@]}" \
-              | grep -zZv '^hack/leak-canary\.sh$' \
-              | xargs -0 -r grep -InE "$p" 2>/dev/null \
-              | grep -vE "$ALLOWED"); then
+  hits=$(printf '%s\0' "${tracked[@]}" \
+           | grep -zZv '^hack/leak-canary\.sh$' \
+           | xargs -0 -r grep -InE "$p" 2>/dev/null)
+  if [ -n "$allow" ] && [ -n "$hits" ]; then
+    hits=$(grep -vE "$allow" <<< "$hits")
+  fi
+  if [ -n "$hits" ]; then
     echo "LEAK: pattern /$p/ matched — particulars belong in caller inputs or org variables:"
     echo "$hits" | head -5 | sed 's/^/    /'
     fail=1
