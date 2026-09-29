@@ -1,0 +1,263 @@
+# Proposes merging aws/amazon-eks-pod-identity-webhook's master into
+# ours — never merges anything itself, never resolves a conflict. The
+# repo already has a release-driven signal for this (renovate.json's
+# customManagers bumps hack/UPSTREAM_VERSION when upstream cuts a
+# tagged release — see CONTRIBUTING.md). This is the commit-level
+# complement: it catches upstream fixes that land on `master` between
+# releases (the admission/v1 fix this fork used to carry lived on
+# upstream master for weeks before any tag included it) and opens a
+# pull request the day they appear, rather than waiting for a release.
+#
+# MERGE, NEVER REBASE (component contract; see README "Syncing With
+# Upstream"): the fork's own patches stay additive, and — separately —
+# the merge-base with upstream has to survive so a later run's
+# `merge-base --is-ancestor` still means something. A rebase would
+# rewrite every commit this job has already merged and desync that
+# check silently. This is also why the resulting pull request MUST be
+# merged as a merge commit, not squashed or rebased by GitHub on the
+# way in: gitops' `cfg/github.yaml` carries a per-repo override
+# (`chore/webhook-allow-merge-commit`) allowing merge commits for this
+# repository alongside the estate-wide rebase default, exactly so this
+# one class of pull request can be merged that way.
+#
+# CONFLICT HANDLING: on a merge conflict this job does not touch a
+# single line to resolve it. It aborts the merge, opens an issue naming
+# the upstream commit and the conflicting paths, and stops — no branch,
+# no pull request. A human (or an agent with more context than a cron
+# job) resolves it and re-runs `workflow_dispatch` once the fix lands
+# on master by hand, at which point the ancestry check sees the two
+# histories reconciled and does nothing further for that upstream SHA.
+#
+# TOKEN: the same access-roster exchange this repo's auto-release.yaml
+# uses (truvity/access-roster, narrowed to this repository) rather than
+# the default GITHUB_TOKEN. A pull request opened with GITHUB_TOKEN
+# does not trigger `pull_request`-triggered workflows (GitHub's
+# recursive-workflow guard) — CI would never run on the sync PR, and a
+# human reviewer would have to push an empty commit just to get a
+# green check. An App installation token doesn't carry that
+# restriction.
+#
+# IDEMPOTENT: if a pull request already exists for this upstream SHA's
+# sync branch, the run exits without doing anything else — a daily
+# schedule and a manual `workflow_dispatch` can both fire without
+# opening duplicates.
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: "17 5 * * *" # daily, staggered off security.yaml's 6am and auto-release's Monday 6:13
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: upstream-sync-${{ github.repository }}
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    if: vars.ACCESS_ROSTER_ISSUER != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      id-token: write # the access-roster exchange
+    env:
+      UPSTREAM_URL: https://github.com/aws/amazon-eks-pod-identity-webhook.git
+    steps:
+      - name: Name this repository
+        id: repo
+        env:
+          REPO: ${{ github.repository }}
+        run: echo "name=${REPO#*/}" >> "$GITHUB_OUTPUT"
+
+      # THIS repository only. contents:write pushes the sync branch,
+      # pull_requests:write opens the PR, issues:write opens the
+      # conflict issue on the rare path that needs one.
+      - uses: truvity/access-roster@6ce99fe347c0bc6e871932e025bc78f7f40c54f0 # v1.39.2
+        id: token
+        with:
+          issuer: ${{ vars.ACCESS_ROSTER_ISSUER }}
+          github-app: truvity-ci-automation
+          repositories: ${{ steps.repo.outputs.name }}
+          permissions: contents:write,pull_requests:write,issues:write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          token: ${{ steps.token.outputs.github-token }}
+
+      - name: git identity
+        env:
+          BOT: truvity-ci-automation
+        run: |
+          git config user.name "${BOT}[bot]"
+          git config user.email "${BOT}[bot]@users.noreply.github.com"
+
+      - name: Fetch upstream
+        run: |
+          set -euo pipefail
+          git remote add upstream "$UPSTREAM_URL"
+          git fetch upstream master --quiet
+          # Upstream tags share this fork's own bare `vX.Y.Z` convention
+          # (upstream v0.6.17, this fork v2.0.1, ...); fetching them into
+          # the ordinary refs/tags/* namespace risks a same-named clobber
+          # against this repo's own release tags the day the numbers
+          # collide. Namespaced instead.
+          git fetch upstream 'refs/tags/*:refs/upstream-tags/*' --quiet
+
+      - name: Anything to sync?
+        id: check
+        run: |
+          set -euo pipefail
+          if git merge-base --is-ancestor upstream/master HEAD; then
+            echo "new=false" >> "$GITHUB_OUTPUT"
+            echo "upstream/master is already merged — nothing to sync." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          echo "new=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$(git rev-parse --short=12 upstream/master)" >> "$GITHUB_OUTPUT"
+          echo "full_sha=$(git rev-parse upstream/master)" >> "$GITHUB_OUTPUT"
+
+      - name: Skip if a sync PR for this SHA already exists
+        id: existing
+        if: steps.check.outputs.new == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.github-token }}
+          BRANCH: chore/upstream-sync-${{ steps.check.outputs.sha }}
+        run: |
+          set -euo pipefail
+          count=$(gh pr list --repo "$GITHUB_REPOSITORY" --state all --head "$BRANCH" --json number --jq 'length')
+          if [ "$count" -gt 0 ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "a pull request for $BRANCH already exists — nothing further to do." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Attempt the merge
+        id: merge
+        if: steps.check.outputs.new == 'true' && steps.existing.outputs.skip == 'false'
+        env:
+          BRANCH: chore/upstream-sync-${{ steps.check.outputs.sha }}
+        run: |
+          set -euo pipefail
+          git checkout -b "$BRANCH"
+          if git merge --no-edit upstream/master; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            git merge --abort
+            echo "conflict=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Recomputed on its own branch checkout (not the merge commit's
+      # tree) so a conflicting merge still lists what it tried to bring
+      # in — this diff is between the two histories' common ancestor
+      # and upstream/master, unaffected by whether the merge landed.
+      - name: List the upstream commits this covers
+        id: commits
+        if: steps.check.outputs.new == 'true' && steps.existing.outputs.skip == 'false'
+        run: |
+          set -euo pipefail
+          base=$(git merge-base origin/master upstream/master)
+          {
+            echo "list<<UPSTREAM_COMMITS_EOF"
+            git log --pretty='- %h %s' "$base..upstream/master"
+            echo "UPSTREAM_COMMITS_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      # No behavioural change here: this only turns a stale RECORD of
+      # the last release merged into an accurate one when the merge
+      # happens to have carried master past a newer upstream tag. The
+      # release-driven renovate.json customManager (see the file's own
+      # header) is the primary way this value moves; this just keeps it
+      # from lagging behind what master actually contains.
+      - name: Keep hack/UPSTREAM_VERSION in step with what was merged
+        if: steps.merge.outputs.conflict == 'false'
+        run: |
+          set -euo pipefail
+          latest_tag=$(git for-each-ref --merged=upstream/master --format='%(refname:short)' refs/upstream-tags/ \
+            | sed 's#^upstream-tags/##' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -1 || true)
+          current=$(grep -oE '^v[0-9]+\.[0-9]+\.[0-9]+$' hack/UPSTREAM_VERSION || true)
+          if [ -n "$latest_tag" ] && [ "$latest_tag" != "$current" ]; then
+            sed -i "s/^v[0-9]\+\.[0-9]\+\.[0-9]\+\$/${latest_tag}/" hack/UPSTREAM_VERSION
+            git add hack/UPSTREAM_VERSION
+            git commit -m "chore: hack/UPSTREAM_VERSION -> ${latest_tag} (upstream sync)"
+          fi
+
+      - name: Push the sync branch
+        if: steps.merge.outputs.conflict == 'false'
+        env:
+          BRANCH: chore/upstream-sync-${{ steps.check.outputs.sha }}
+        run: git push origin "$BRANCH"
+
+      - name: Open the sync pull request
+        if: steps.merge.outputs.conflict == 'false'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.github-token }}
+          BRANCH: chore/upstream-sync-${{ steps.check.outputs.sha }}
+          SHORT: ${{ steps.check.outputs.sha }}
+          FULL: ${{ steps.check.outputs.full_sha }}
+          COMMITS: ${{ steps.commits.outputs.list }}
+        run: |
+          set -euo pipefail
+          body="Merges \`aws/amazon-eks-pod-identity-webhook@${SHORT}\` (${FULL}).
+
+          Opened by \`.github/workflows/upstream-sync.yaml\`. Merge this as a
+          **merge commit** — this repository allows merge commits for pull
+          requests headed \`chore/upstream-sync-*\` alongside its normal
+          rebase-only default (gitops \`cfg/github.yaml\`); a rebase or squash
+          here would lose the merge-base with upstream that the next sync
+          run depends on.
+
+          Upstream commits carried by this merge:
+
+          ${COMMITS}
+          "
+          gh pr create --repo "$GITHUB_REPOSITORY" --base master --head "$BRANCH" \
+            --title "chore: sync upstream through aws/amazon-eks-pod-identity-webhook@${SHORT}" \
+            --body "$body"
+
+      # `gh issue create --label` fails outright on a label that doesn't
+      # exist yet; this repo has never needed one for a bot-filed issue
+      # before. Idempotent — a second run's create call 422s and is
+      # swallowed.
+      - name: Ensure the upstream-sync label exists
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.github-token }}
+        run: |
+          gh label create upstream-sync --repo "$GITHUB_REPOSITORY" \
+            --description "Filed by .github/workflows/upstream-sync.yaml" \
+            --color 5319e7 2>/dev/null || true
+
+      - name: On a conflict, open an issue and stop
+        if: steps.merge.outputs.conflict == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.github-token }}
+          SHORT: ${{ steps.check.outputs.sha }}
+          FULL: ${{ steps.check.outputs.full_sha }}
+          COMMITS: ${{ steps.commits.outputs.list }}
+        run: |
+          set -euo pipefail
+          title="Upstream sync conflict at aws/amazon-eks-pod-identity-webhook@${SHORT}"
+          existing=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"${title}\"" --json number --jq 'length')
+          if [ "$existing" -gt 0 ]; then
+            echo "an open issue for ${SHORT} already exists — not filing a duplicate." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          body="\`git merge --no-edit upstream/master\` conflicts merging
+          \`aws/amazon-eks-pod-identity-webhook@${SHORT}\` (${FULL}) into
+          \`master\`. This job does not resolve conflicts — merge upstream
+          by hand (see README \"Syncing With Upstream\"), push the result to
+          \`master\` yourself or through a normal pull request, then close
+          this issue; the next scheduled run sees the histories reconciled
+          and does nothing further for this SHA.
+
+          Upstream commits this sync was attempting to bring in:
+
+          ${COMMITS}
+          "
+          gh issue create --repo "$GITHUB_REPOSITORY" \
+            --title "$title" --body "$body" --label upstream-sync
