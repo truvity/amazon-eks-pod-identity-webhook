@@ -2,6 +2,12 @@
 
 All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are documented here.
 
+## v1.0.8
+
+- Synced with upstream `aws/amazon-eks-pod-identity-webhook` (merge of `81bcb64`; no tree change, the fork was already ahead).
+- Kubernetes 1.36 compatibility re-verified: resolved since v0.6.16-truvity.1 (`admission/v1`, `k8s.io/*` on the v0.36 line); README carries a dated `Fork status` section.
+- Release notes name the image where it actually publishes (`…/amazon-eks-pod-identity-webhook/webhook`); `renovate.json` extends the shared preset; ci-workflows pins moved to v3.13.1.
+
 ## [0.6.17-truvity.1] — 2026-07-04
 
 ### Changed
