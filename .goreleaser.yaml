@@ -49,7 +49,7 @@ release:
   header: |
     ## Amazon EKS Pod Identity Webhook {{ .Tag }}
 
-    Docker image: `ghcr.io/truvity/amazon-eks-pod-identity-webhook:{{ .Version }}`
+    Docker image: `ghcr.io/truvity/amazon-eks-pod-identity-webhook/webhook:{{ .Version }}`
     Helm chart: `oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook:{{ .Version }}`
 
 changelog:
