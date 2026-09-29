@@ -40,12 +40,20 @@ snapshot:
 
 # Lint + render the Helm chart
 chart-lint:
-    helm lint charts/amazon-eks-pod-identity-webhook
-    helm template webhook charts/amazon-eks-pod-identity-webhook >/dev/null
+    # Regression: defaultAwsRegion is required (component contract C13).
+    # helm lint must fail with empty defaultAwsRegion, showing minLength validation error.
+    bash -c 'helm lint charts/amazon-eks-pod-identity-webhook 2>&1 | grep -q "minLength" && exit 0 || exit 1'
+    # Regression: lint succeeds with a valid region set.
+    helm lint charts/amazon-eks-pod-identity-webhook \
+        --set config.defaultAwsRegion=eu-example-1
+    # Regression: render succeeds with a valid region set.
+    helm template webhook charts/amazon-eks-pod-identity-webhook \
+        --set config.defaultAwsRegion=eu-example-1 >/dev/null
     # Regression: non-empty serviceAccount.annotations must render and the
     # rendered ServiceAccount must carry them (tpl argument-order bug, fixed
     # in v1.0.9 — `toYaml . | tpl .` passed tpl its arguments backwards).
     helm template webhook charts/amazon-eks-pod-identity-webhook \
+        --set config.defaultAwsRegion=eu-example-1 \
         --set serviceAccount.annotations.chart-lint-check=ok \
         --show-only templates/serviceaccount.yaml \
         | grep -q 'chart-lint-check: ok'

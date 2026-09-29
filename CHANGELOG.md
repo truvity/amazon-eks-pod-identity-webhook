@@ -2,6 +2,10 @@
 
 All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are documented here.
 
+## v2.0.0
+
+**Breaking:** `config.defaultAwsRegion` no longer defaults to `us-east-1`; it is now required and must be set explicitly to the AWS region for your cluster (component contract rule C13: estate facts are inputs, never defaults). Set it via `--set config.defaultAwsRegion=eu-central-1` (or your region) when installing the chart. Helm validation now rejects charts rendered without this value.
+
 ## v1.0.9
 
 - Fixed `charts/amazon-eks-pod-identity-webhook/templates/serviceaccount.yaml`: a non-empty `serviceAccount.annotations` failed to render (`expected string; got map`). `tpl` was called as `toYaml . | tpl .`, passing it the piped YAML string as its *template* argument and the annotations map as its *context* argument — backwards. Fixed to `tpl (toYaml .) $`. `chart-lint` now renders a chart with non-empty `serviceAccount.annotations` and checks the ServiceAccount carries them.
