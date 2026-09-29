@@ -42,6 +42,13 @@ snapshot:
 chart-lint:
     helm lint charts/amazon-eks-pod-identity-webhook
     helm template webhook charts/amazon-eks-pod-identity-webhook >/dev/null
+    # Regression: non-empty serviceAccount.annotations must render and the
+    # rendered ServiceAccount must carry them (tpl argument-order bug, fixed
+    # in v1.0.9 — `toYaml . | tpl .` passed tpl its arguments backwards).
+    helm template webhook charts/amazon-eks-pod-identity-webhook \
+        --set serviceAccount.annotations.chart-lint-check=ok \
+        --show-only templates/serviceaccount.yaml \
+        | grep -q 'chart-lint-check: ok'
 
 # Package Helm chart locally
 helm-package:

@@ -2,6 +2,10 @@
 
 All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are documented here.
 
+## v1.0.9
+
+- Fixed `charts/amazon-eks-pod-identity-webhook/templates/serviceaccount.yaml`: a non-empty `serviceAccount.annotations` failed to render (`expected string; got map`). `tpl` was called as `toYaml . | tpl .`, passing it the piped YAML string as its *template* argument and the annotations map as its *context* argument — backwards. Fixed to `tpl (toYaml .) $`. `chart-lint` now renders a chart with non-empty `serviceAccount.annotations` and checks the ServiceAccount carries them.
+
 ## v1.0.8
 
 - Synced with upstream `aws/amazon-eks-pod-identity-webhook` (merge of `81bcb64`; no tree change, the fork was already ahead).
