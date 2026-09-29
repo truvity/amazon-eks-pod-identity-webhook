@@ -29,6 +29,12 @@ or the chart's rendered output.
 - Added `.github/policy-conformance.yaml`, declaring this repository's
   `LICENSE` exempt from the contract's MIT-at-root rule as a derivative
   of the Apache-2.0 `aws/amazon-eks-pod-identity-webhook` (C9).
+- Rewrote "Why This Fork Exists" to state the fork's actual purpose —
+  packaging (chart, multi-arch images, dependency upkeep, security
+  scanning), not carrying a code patch — now that the `admission/v1` fix
+  is upstream and this fork's Go source tracks upstream unchanged by
+  policy. Added a "When This Fork Goes Away" section naming the two
+  exit conditions.
 
 ## v2.0.0
 

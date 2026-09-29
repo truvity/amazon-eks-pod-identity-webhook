@@ -51,11 +51,49 @@ Three things, and how they relate:
 
 ## Why This Fork Exists
 
-The upstream webhook uses `admission/v1beta1` for its mutating admission handler. Kubernetes 1.35 removed `v1beta1` admission API support entirely — only `v1` is served. On K8s 1.35+ clusters, the upstream webhook binary returns responses the API server cannot parse, causing silent failures (`failurePolicy: Ignore`).
+Upstream (`aws/amazon-eks-pod-identity-webhook`) ships Go source and a
+Dockerfile, but no Helm chart, no dependency upkeep between releases, and
+no scheduled security scanning. Its last tagged release, `v0.6.17`
+(2026-06-01), predates the fix for Kubernetes 1.35's removal of the
+`admission/v1beta1` API — merged to upstream `master` in
+[PR #310](https://github.com/aws/amazon-eks-pod-identity-webhook/pull/310)
+on 2026-08-11 — and its image is still built on an EOL Amazon Linux 2
+base (`go-runner:v0.18.0-go-1.26-latest.al2`).
 
-EKS manages this internally with a patched control-plane version. No open-source fork had fixed this.
+This fork exists to package upstream, not to carry a patch on top of it:
 
-This fork fixes the webhook binary to use `admission/v1`.
+- A **Helm chart** (`charts/amazon-eks-pod-identity-webhook`), which
+  upstream does not ship at all.
+- **Versioned, multi-arch images** on GHCR, rebuilt on a maintained base
+  with dependencies kept current between upstream releases (see
+  "Changes From Upstream" below).
+- A **security lane** — `govulncheck` and CVE scanning gate every merge
+  (`.github/workflows/security.yaml`; see "Status" below) — something
+  upstream's own repository does not run on a schedule.
+
+The `admission/v1` fix this fork used to carry is now on upstream
+`master`, merged there ahead of any tagged release that includes it. This
+fork's Go source tracks upstream unchanged, and divergence is kept at
+zero by policy: the one standing exception is
+`pkg/cache/debug/debug.go`'s debug endpoint, which upstream has not yet
+migrated off `admission/v1beta1`. That migration is being sent upstream
+as its own pull request; once it merges, this fork carries no Go changes
+of its own at all.
+
+## When This Fork Goes Away
+
+Two conditions, either one enough on its own:
+
+- **Upstream catches up.** Once `aws/amazon-eks-pod-identity-webhook`
+  publishes tagged releases cut from a `master` that includes the
+  `admission/v1` fix, and a maintained Helm chart exists for it — here or
+  elsewhere — consumers switch to that and stop depending on this fork.
+- **No consumer needs the webhook.** This fork's only consumer today
+  deploys it to emulate EKS Pod Identity on a non-EKS cluster (see
+  "Consumers" below). If the charts that motivate that emulation gain
+  their own workload-identity values — talking to the platform's
+  credential broker directly, without this webhook in the path — nothing
+  installs this chart any longer, and the repository is archived.
 
 ## Install and a worked example
 
