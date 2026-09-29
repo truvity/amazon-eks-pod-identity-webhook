@@ -33,6 +33,16 @@ platform's problem, never this chart's.
 
 ## The model
 
+`truvity/policy`'s [platform contract](https://github.com/truvity/policy/blob/master/docs/contracts/platform.md),
+rule 2, says a chart declares only the **account** a workload runs as — a
+`ServiceAccount` and its annotations — and that the platform owes it the
+rights those annotations name, "by whatever mechanism," before the
+workload starts. On a cluster with no native pod identity (Talos,
+kubeadm, k3s — anything that isn't EKS or a cloud with its own
+equivalent), this webhook is that mechanism: the admission-time resolver
+that turns a `ServiceAccount` annotation into a working AWS credential,
+without the chart itself naming one.
+
 Three things, and how they relate:
 
 - A **`MutatingWebhookConfiguration`** intercepts every Pod create (and,
@@ -41,7 +51,8 @@ Three things, and how they relate:
   (`eks.amazonaws.com/role-arn` by default — the prefix is
   `config.annotationPrefix`) and, when present, injects a projected
   service-account-token volume plus `AWS_ROLE_ARN` /
-  `AWS_WEB_IDENTITY_TOKEN_FILE` environment variables into every
+  `AWS_WEB_IDENTITY_TOKEN_FILE` environment variables — and the region,
+  from the webhook's own `config.defaultAwsRegion` — into every
   container in the Pod.
 - The workload never sees long-lived credentials: it reads the projected
   **token** from `config.tokenMountPath` and exchanges it itself, against
@@ -88,12 +99,15 @@ Two conditions, either one enough on its own:
   publishes tagged releases cut from a `master` that includes the
   `admission/v1` fix, and a maintained Helm chart exists for it — here or
   elsewhere — consumers switch to that and stop depending on this fork.
-- **No consumer needs the webhook.** This fork's only consumer today
-  deploys it to emulate EKS Pod Identity on a non-EKS cluster (see
-  "Consumers" below). If the charts that motivate that emulation gain
-  their own workload-identity values — talking to the platform's
-  credential broker directly, without this webhook in the path — nothing
-  installs this chart any longer, and the repository is archived.
+- **No estate needs a resolver.** This fork's only consumer today runs
+  it on a cluster with no native pod identity (see "Consumers" below),
+  where the platform contract's rule 2 still requires something to
+  resolve a `ServiceAccount` annotation into a working credential — this
+  webhook is that something. The charts themselves are right not to
+  carry AWS env or volume knobs of their own; rule 2 asks for an account
+  and nothing more. If every estate this fork runs on ends up on a
+  cluster with its own native pod identity, nothing needs a resolver,
+  nothing installs this chart, and the repository is archived.
 
 ## Install and a worked example
 
