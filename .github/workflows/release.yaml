@@ -26,7 +26,7 @@ jobs:
     permissions:
       contents: write
       packages: write
-    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@83a33664e82b4df3764ed4b4544707320b51db92 # v3.13.1
+    uses: truvity/ci-workflows/.github/workflows/release-public.yaml@822f94031ee2c91b76da8d5071bfb3d1b6af27b7 # v3.19.0
     with:
       charts: '["amazon-eks-pod-identity-webhook"]'
       # Nest the image under the repo namespace (INF-586 / INF-584 N1):
