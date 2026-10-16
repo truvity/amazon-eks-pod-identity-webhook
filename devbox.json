@@ -1,7 +1,7 @@
 {
   "packages": [
     "go@1.27.0",
-    "golangci-lint@2.13.1",
+    "github:NixOS/nixpkgs/39ad350a0602fa0a58a544344e3e9187526ea45c#golangci-lint",
     "gopls@0.23.0",
     "goreleaser@2.17.1",
     "govulncheck@1.7.0",
