@@ -82,7 +82,7 @@ jobs:
       # truvity-ci-automation App installation carries no issues:write
       # (it's installed on every repository), so a conflict fails the
       # run instead of opening an issue — see CONFLICT HANDLING above.
-      - uses: truvity/ci-actions/token-exchange@de28ab4e61adb8b217c0838886cc6e4b2c71b398 # v1.9.0
+      - uses: truvity/ci-actions/token-exchange@f9130c63db2899c18884c027a7eade20d0ab796a # v1.18.0
         id: token
         with:
           issuer: ${{ vars.ACCESS_ROSTER_ISSUER }}
