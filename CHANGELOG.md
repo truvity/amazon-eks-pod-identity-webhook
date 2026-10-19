@@ -2,6 +2,10 @@
 
 All notable changes to the Truvity fork of amazon-eks-pod-identity-webhook are documented here.
 
+## v2.0.4
+
+- Dependency updates.
+
 ## v2.0.3
 
 - Dependency updates.
