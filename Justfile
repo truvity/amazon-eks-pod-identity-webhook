@@ -71,6 +71,22 @@ chart-lint:
         --set serviceAccount.annotations.chart-lint-check=ok \
         --show-only templates/serviceaccount.yaml \
         | grep -q 'chart-lint-check: ok'
+    # Regression: the Role renders only with config.podIdentityWebhookMap.enabled,
+    # so the golden never shows it. It must not grant `create` on Secrets: the
+    # chart runs --in-cluster=false (no Secrets API calls), and RBAC cannot
+    # name-scope `create`, so the grant would let a stolen token mint a Secret
+    # of any name (upstream aws/amazon-eks-pod-identity-webhook#313).
+    # (Rendered to a variable first: under `pipefail`, grep -q exiting early
+    # can SIGPIPE helm and make a real match read as no match.)
+    role_out=$(helm template webhook charts/amazon-eks-pod-identity-webhook \
+        --values tests/cases/amazon-eks-pod-identity-webhook/default.yaml \
+        --set config.podIdentityWebhookMap.enabled=true \
+        --show-only templates/role.yaml)
+    grep -q 'resources: \["configmaps"\]' <<<"$role_out"   # the Role did render
+    if grep -qE '^[[:space:]]+- create$' <<<"$role_out"; then
+        echo "ERROR: templates/role.yaml grants create — it must not (see comment above)" >&2
+        exit 1
+    fi
     # Golden: diff the default render (region set via tests/cases, nothing
     # else) against its recorded output — a reviewer sees what a change did
     # to the rendered manifests (component contract C3).
