@@ -16,8 +16,9 @@
 package handler
 
 import (
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
 	corev1 "k8s.io/api/core/v1"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
 )
 
 func addWorkloadIdentityToContainer(container *corev1.Container, enabled bool) bool {

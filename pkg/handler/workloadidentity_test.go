@@ -20,13 +20,14 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
-	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/cache"
+	"github.com/aws/amazon-eks-pod-identity-webhook/pkg/containercredentials"
 )
 
 func TestAddWorkloadIdentityToContainer(t *testing.T) {
