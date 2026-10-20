@@ -135,6 +135,7 @@ type podPatchConfig struct {
 	TokenPath                       string
 	WebIdentityPatchConfig          *webIdentityPatchConfig
 	ContainerCredentialsPatchConfig *containercredentials.PatchConfig
+	WorkloadIdentityEnabled         bool
 }
 
 type webIdentityPatchConfig struct {
@@ -210,14 +211,15 @@ func (m *Modifier) addEnvToContainer(container *corev1.Container, tokenFilePath 
 		}
 	}
 
+	workloadIdentityChanged := addWorkloadIdentityToContainer(container, patchConfig.WorkloadIdentityEnabled)
 	if ((patchConfig.WebIdentityPatchConfig != nil && webIdentityKeysDefined) ||
 		(patchConfig.ContainerCredentialsPatchConfig != nil && containerCredentialsKeysDefined)) &&
-		regionKeyDefined && regionalStsKeyDefined {
+		regionKeyDefined && regionalStsKeyDefined && !workloadIdentityChanged {
 		klog.V(4).Infof("Container %s has necessary env variables already present", container.Name)
 		return false
 	}
 
-	changed := false
+	changed := workloadIdentityChanged
 	env := container.Env
 
 	if !regionalStsKeyDefined && patchConfig.UseRegionalSTS {
@@ -319,6 +321,9 @@ func (m *Modifier) getPodSpecPatch(pod *corev1.Pod, patchConfig *podPatchConfig)
 		// Eg. /var/run/secrets/eks.amazonaws.com/serviceaccount/token to
 		//     C:\var\run\secrets\eks.amazonaws.com\serviceaccount\token
 		tokenFilePath = "C:" + strings.Replace(tokenFilePath, `/`, `\`, -1)
+
+		// Workload identity socket injection is not yet supported for Windows pods.
+		patchConfig.WorkloadIdentityEnabled = false
 	}
 
 	var changed bool
@@ -413,6 +418,11 @@ func (m *Modifier) getPodSpecPatch(pod *corev1.Pod, patchConfig *podPatchConfig)
 		changed = true
 	}
 
+	if operation, ok := workloadIdentityPodVolumePatch(pod.Spec.Volumes, patchConfig.WorkloadIdentityEnabled); ok {
+		patch = append(patch, operation)
+		changed = true
+	}
+
 	patch = append(patch, patchOperation{
 		Op:    "add",
 		Path:  "/spec/containers",
@@ -458,6 +468,7 @@ func (m *Modifier) buildPodPatchConfig(pod *corev1.Pod) *podPatchConfig {
 			TokenPath:                       containerCredentialsPatchConfig.TokenPath,
 			WebIdentityPatchConfig:          nil,
 			ContainerCredentialsPatchConfig: containerCredentialsPatchConfig,
+			WorkloadIdentityEnabled:         containerCredentialsPatchConfig.WorkloadIdentityEnabled,
 		}
 	}
 

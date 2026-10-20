@@ -44,11 +44,12 @@ type FileConfig struct {
 }
 
 type PatchConfig struct {
-	Audience   string
-	MountPath  string
-	VolumeName string
-	TokenPath  string
-	FullUri    string
+	Audience                string
+	MountPath               string
+	VolumeName              string
+	TokenPath               string
+	FullUri                 string
+	WorkloadIdentityEnabled bool
 }
 
 func NewFileConfig(audience, mountPath, volumeName, tokenPath, fullUri string) *FileConfig {
@@ -90,7 +91,11 @@ func (f *FileConfig) Load(content []byte) error {
 	newCache := make(map[Identity]bool)
 	for _, item := range configObject.Identities {
 		klog.V(5).Infof("Adding SA %s/%s to container credentials config cache", item.Namespace, item.ServiceAccount)
-		newCache[item] = true
+		key := Identity{
+			Namespace:      item.Namespace,
+			ServiceAccount: item.ServiceAccount,
+		}
+		newCache[key] = item.WorkloadIdentityEnabled
 	}
 	f.identityConfigObject = &configObject
 	f.cache = newCache
@@ -104,21 +109,25 @@ func (f *FileConfig) Get(namespace string, serviceAccount string) *PatchConfig {
 		Namespace:      namespace,
 		ServiceAccount: serviceAccount,
 	}
-	if f.getCacheItem(key) {
+	workloadIdentityEnabled, ok := f.getCacheItem(key)
+	if ok {
 		return &PatchConfig{
-			Audience:   f.audience,
-			MountPath:  f.mountPath,
-			VolumeName: f.volumeName,
-			TokenPath:  f.tokenPath,
-			FullUri:    f.fullUri,
+			Audience:                f.audience,
+			MountPath:               f.mountPath,
+			VolumeName:              f.volumeName,
+			TokenPath:               f.tokenPath,
+			FullUri:                 f.fullUri,
+			WorkloadIdentityEnabled: workloadIdentityEnabled,
 		}
 	}
 
 	return nil
 }
 
-func (f *FileConfig) getCacheItem(identity Identity) bool {
+func (f *FileConfig) getCacheItem(key Identity) (enabled bool, found bool) {
 	f.mu.RLock()
 	defer f.mu.RUnlock()
-	return f.cache[identity]
+	// The found value distinguishes a disabled workload identity from a missing cache entry.
+	enabled, found = f.cache[key]
+	return enabled, found
 }
