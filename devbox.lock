@@ -5,8 +5,8 @@
       "resolved": "github:NixOS/nixpkgs/39ad350a0602fa0a58a544344e3e9187526ea45c#golangci-lint"
     },
     "github:NixOS/nixpkgs/nixpkgs-unstable": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1?lastModified=1792812153"
+      "last_modified": "2026-11-01T00:57:29Z",
+      "resolved": "github:NixOS/nixpkgs/d357a2b54f0b6dc4aeb4e993190a52cf151b6f24?lastModified=1793494649"
     },
     "go@1.27.0": {
       "last_modified": "2026-08-27T07:16:00Z",
@@ -85,8 +85,8 @@
       }
     },
     "goreleaser@2.17.1": {
-      "last_modified": "2026-10-24T03:22:33Z",
-      "resolved": "github:NixOS/nixpkgs/674a2028661e550a97400c1cc992b9cca9a668a1#goreleaser",
+      "last_modified": "2026-11-01T00:57:29Z",
+      "resolved": "github:NixOS/nixpkgs/d357a2b54f0b6dc4aeb4e993190a52cf151b6f24#goreleaser",
       "source": "devbox-search",
       "version": "2.17.1",
       "systems": {
@@ -94,31 +94,31 @@
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/1y9isihjrxvjkc6g9b641sgym37v6k3v-goreleaser-2.17.1",
+              "path": "/nix/store/f6iv5b3vm5vmm68mbd6xv7rmzn7gaz8a-goreleaser-2.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/1y9isihjrxvjkc6g9b641sgym37v6k3v-goreleaser-2.17.1"
+          "store_path": "/nix/store/f6iv5b3vm5vmm68mbd6xv7rmzn7gaz8a-goreleaser-2.17.1"
         },
         "aarch64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/i4w3rirqah9yp9m3dw2difz4clmrz97x-goreleaser-2.17.1",
+              "path": "/nix/store/jps9d40h0yfbsrjbkampvj6mp78k826p-goreleaser-2.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/i4w3rirqah9yp9m3dw2difz4clmrz97x-goreleaser-2.17.1"
+          "store_path": "/nix/store/jps9d40h0yfbsrjbkampvj6mp78k826p-goreleaser-2.17.1"
         },
         "x86_64-linux": {
           "outputs": [
             {
               "name": "out",
-              "path": "/nix/store/y2vdk9fblydl8zgn2kv09cqzr8z6mp75-goreleaser-2.17.1",
+              "path": "/nix/store/r7vf7c2k69kldy8zqy40hc7hrk4r7fkr-goreleaser-2.17.1",
               "default": true
             }
           ],
-          "store_path": "/nix/store/y2vdk9fblydl8zgn2kv09cqzr8z6mp75-goreleaser-2.17.1"
+          "store_path": "/nix/store/r7vf7c2k69kldy8zqy40hc7hrk4r7fkr-goreleaser-2.17.1"
         }
       }
     },
