@@ -28,7 +28,7 @@ concurrency:
 
 jobs:
   recipes:
-    uses: truvity/ci-workflows/.github/workflows/check.yaml@690acf2363bb57e0af99d62bfe88c894a8f68f0a # v5.9.0
+    uses: truvity/ci-workflows/.github/workflows/check.yaml@92b77363d8fb3a422562287a71107c122dc9637a # v5.12.0
     with:
       # NOT `vuln`. It runs in security.yaml, which is not a required
       # context — a standard-library advisory with no released fix would
