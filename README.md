@@ -64,12 +64,11 @@ Three things, and how they relate:
 
 Upstream (`aws/amazon-eks-pod-identity-webhook`) ships Go source and a
 Dockerfile, but no Helm chart, no dependency upkeep between releases, and
-no scheduled security scanning. Its last tagged release, `v0.6.17`
-(2026-06-01), predates the fix for Kubernetes 1.35's removal of the
-`admission/v1beta1` API — merged to upstream `master` in
+no scheduled security scanning. The fix for Kubernetes 1.35's removal of
+the `admission/v1beta1` API was merged to upstream `master` in
 [PR #310](https://github.com/aws/amazon-eks-pod-identity-webhook/pull/310)
-on 2026-08-11 — and its image is still built on an EOL Amazon Linux 2
-base (`go-runner:v0.18.0-go-1.26-latest.al2`).
+on 2026-08-11 and first tagged in `v0.6.18` (2026-10-20); the release
+before it, `v0.6.17` (2026-06-01), predates it.
 
 This fork exists to package upstream, not to carry a patch on top of it:
 
@@ -83,7 +82,7 @@ This fork exists to package upstream, not to carry a patch on top of it:
   upstream's own repository does not run on a schedule.
 
 The `admission/v1` fix this fork used to carry is now on upstream
-`master`, merged there ahead of any tagged release that includes it. This
+`master` and in upstream's tagged releases from `v0.6.18`. This
 fork's Go source tracks upstream unchanged, and divergence is kept at
 zero by policy: the one standing exception is
 `pkg/cache/debug/debug.go`'s debug endpoint, which upstream has not yet
@@ -95,10 +94,10 @@ of its own at all.
 
 Two conditions, either one enough on its own:
 
-- **Upstream catches up.** Once `aws/amazon-eks-pod-identity-webhook`
-  publishes tagged releases cut from a `master` that includes the
-  `admission/v1` fix, and a maintained Helm chart exists for it — here or
-  elsewhere — consumers switch to that and stop depending on this fork.
+- **Upstream catches up.** Upstream now publishes tagged releases that
+  include the `admission/v1` fix. Once a maintained Helm chart also exists
+  for it — here or elsewhere — consumers switch to that and stop depending
+  on this fork.
 - **No estate needs a resolver.** This fork's only consumer today runs
   it on a cluster with no native pod identity (see "Consumers" below),
   where the platform contract's rule 2 still requires something to
@@ -143,6 +142,11 @@ pki:
 helm install webhook oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhook \
   --version 2.0.0 --values webhook-values.yaml
 ```
+
+## Platform part and company part
+
+- **Platform part.** The platform admin installs the chart `charts/amazon-eks-pod-identity-webhook` once on each cluster that needs it, and sets the values the platform owns: `config.defaultAwsRegion` (required), `config.tokenAudience`, and the webhook's serving certificate through cert-manager (`pki`). The chart ships a cluster-wide `MutatingWebhookConfiguration`; `mutatingWebhook.namespaceSelector` narrows which namespaces it admits. The full list of values is in the [chart README](charts/amazon-eks-pod-identity-webhook/README.md).
+- **Company part.** A company's SRE writes no document for this component. The company's own charts declare a `ServiceAccount` with the `eks.amazonaws.com/role-arn` annotation (the prefix is `config.annotationPrefix`), and the webhook turns it into a projected token and the `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` variables in the Pod. The role that annotation names is the company's to create and trust.
 
 ## Changes From Upstream
 
@@ -208,7 +212,7 @@ one, and why.
 
 ## Status
 
-- **Upstream sync:** last merged `aws/amazon-eks-pod-identity-webhook@master` through commit [`81bcb64`](https://github.com/aws/amazon-eks-pod-identity-webhook/commit/81bcb64a91e08b9de60c9d8f9df299f57075b09f) (Go 1.26.7 bump) on 2026-09-29. Upstream's latest tagged release remains `v0.6.17`; the single commit past it is a toolchain bump the fork had already matched independently.
+- **Upstream sync:** last merged `aws/amazon-eks-pod-identity-webhook@master` through commit [`c9ffe1d`](https://github.com/aws/amazon-eks-pod-identity-webhook/commit/c9ffe1d567ca), the commit tagged `v0.6.18`, on 2026-10-20. Upstream's tagged releases are listed on its [releases page](https://github.com/aws/amazon-eks-pod-identity-webhook/releases); this fork's own are on its [releases page](https://github.com/truvity/amazon-eks-pod-identity-webhook/releases).
 - **Kubernetes 1.36 compatibility (checked 2026-09-29):** resolved, and has been since `v0.6.16-truvity.1` (2026-05-22). The webhook's admission handler was migrated from the removed `admission/v1beta1` review payload to `admission/v1` (see "Why This Fork Exists" above), and `k8s.io/client-go`/`k8s.io/api`/`k8s.io/apimachinery` are tracked on the `v0.36.x` line, the Kubernetes 1.36 family — client-go's own skew policy additionally covers apiserver 1.35 and 1.37. `admissionregistration.k8s.io/v1` (the `MutatingWebhookConfiguration` API this chart ships) has been stable since Kubernetes 1.16 and nothing in the Kubernetes 1.36 changelog removes or changes it, `certificates.k8s.io`, or the admission review path. No further code change was needed for 1.36. A second, non-AWS estate runs this chart against a live Kubernetes 1.36.4 cluster with no reported incompatibility.
 - **Chart conformance:** golden renders live under `tests/golden/amazon-eks-pod-identity-webhook/`, and `tests/invalid/amazon-eks-pod-identity-webhook/` proves `values.schema.json` refuses an unknown key; `just chart-lint` checks both on every change.
 
