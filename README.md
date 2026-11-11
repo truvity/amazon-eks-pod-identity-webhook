@@ -146,7 +146,7 @@ helm install webhook oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhoo
 ## Platform part and company part
 
 - **Platform part.** The platform admin installs the chart `charts/amazon-eks-pod-identity-webhook` once on each cluster that needs it, and sets `config.defaultAwsRegion` (required), `config.tokenAudience` and the serving certificate (`pki`) for that cluster. The `MutatingWebhookConfiguration` it ships is cluster-wide, and `mutatingWebhook.namespaceSelector` narrows the namespaces it admits; every value is in the [chart README](charts/amazon-eks-pod-identity-webhook/README.md).
-- **Company part.** A company's own charts declare a `ServiceAccount` with the `eks.amazonaws.com/role-arn` annotation (the prefix is `config.annotationPrefix`) in its own namespaces. The webhook turns that annotation into a projected token and the `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` variables in each Pod, and the company writes nothing else for this component.
+- **Company part.** A company's own charts declare a `ServiceAccount` with the `eks.amazonaws.com/role-arn` annotation (the prefix is `config.annotationPrefix`) in its own namespaces. The annotation names one of the company's own limit roles, which the company writes in its nexus repository (see the AWS area of the [delegation model](https://github.com/truvity/policy/blob/master/docs/delegation-model.md)). The webhook turns that annotation into a projected token and the `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` variables in each Pod, and takes no other input from a company.
 
 ## Changes From Upstream
 
