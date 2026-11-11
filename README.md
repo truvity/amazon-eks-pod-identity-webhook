@@ -145,8 +145,8 @@ helm install webhook oci://ghcr.io/truvity/charts/amazon-eks-pod-identity-webhoo
 
 ## Platform part and company part
 
-- **Platform part.** The platform admin installs the chart `charts/amazon-eks-pod-identity-webhook` once on each cluster that needs it, and sets the values the platform owns: `config.defaultAwsRegion` (required), `config.tokenAudience`, and the webhook's serving certificate through cert-manager (`pki`). The chart ships a cluster-wide `MutatingWebhookConfiguration`; `mutatingWebhook.namespaceSelector` narrows which namespaces it admits. The full list of values is in the [chart README](charts/amazon-eks-pod-identity-webhook/README.md).
-- **Company part.** A company's SRE writes no document for this component. The company's own charts declare a `ServiceAccount` with the `eks.amazonaws.com/role-arn` annotation (the prefix is `config.annotationPrefix`), and the webhook turns it into a projected token and the `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` variables in the Pod. The role that annotation names is the company's to create and trust.
+- **Platform part.** The platform admin installs the chart `charts/amazon-eks-pod-identity-webhook` once on each cluster that needs it, and sets `config.defaultAwsRegion` (required), `config.tokenAudience` and the serving certificate (`pki`) for that cluster. The `MutatingWebhookConfiguration` it ships is cluster-wide, and `mutatingWebhook.namespaceSelector` narrows the namespaces it admits; every value is in the [chart README](charts/amazon-eks-pod-identity-webhook/README.md).
+- **Company part.** A company's own charts declare a `ServiceAccount` with the `eks.amazonaws.com/role-arn` annotation (the prefix is `config.annotationPrefix`) in its own namespaces. The webhook turns that annotation into a projected token and the `AWS_ROLE_ARN` and `AWS_WEB_IDENTITY_TOKEN_FILE` variables in each Pod, and the company writes nothing else for this component.
 
 ## Changes From Upstream
 
